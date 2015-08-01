@@ -1,0 +1,29 @@
+-----------------------------------------
+Install GNU Assembler on Linux
+-----------------------------------------
+
+wget -N "http://ftp.gnu.org/pub/gnu/binutils/binutils-2.19.1.tar.bz2"
+mkdir binutils-2.19.1-build/
+cd binutils-2.19.1-build/; ../binutils-2.19.1/configure --target=m68k-elf-gnu --prefix=`pwd`/../binutils-2.19.1-install/ --program-prefix=m68k-elf-gnu --disable-nls --disable-werror
+cd binutils-2.19.1-build/; make all install
+export PATH="$(dirname $(readlink -f $0))/binutils-2.19.1-install/bin:$PATH"
+export LD_LIBRARY_PATH="$(dirname $(readlink -f $0))/binutils-2.19.1-install/lib:$LD_LIBRARY_PATH"
+
+-----------------------------------------
+Now assembler binary is here
+-----------------------------------------
+
+binutils-2.19.1-install/bin/m68k-elf-gnuas
+
+-----------------------------------------
+Compile source codes
+-----------------------------------------
+
+cd /Amiga/asm-tests/
+m68k-elf-gnuas --register-prefix-optional -m68020 --fatal-warnings --warn -M fibonacci-1.s -o fibonacci
+
+-----------------------------------------
+Disassembly binaries
+-----------------------------------------
+
+m68k-elf-gnuobjdump -h -d -t fibonacci
