@@ -70,6 +70,16 @@ monam uppercase
 == Sublime Text 68K package
 =========================================
 
+-----------------------------------------
+Install Sublime-Text
+-----------------------------------------
+
+...
+
+-----------------------------------------
+Install package
+-----------------------------------------
+
 https://packagecontrol.io/packages/M68k%20Assembly
 
 /home/[username]/.config/sublime-text-3/Packages/
@@ -81,3 +91,9 @@ or
 
 cd /path/to/sublime/packages/folder
 curl -L https://github.com/stevenjs/M68k-Assembly/tarball/master | tar xf -
+
+-----------------------------------------
+Make a build system
+-----------------------------------------
+
+http://docs.sublimetext.info/en/latest/reference/build_systems/basics.html
