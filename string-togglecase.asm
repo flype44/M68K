@@ -1,6 +1,6 @@
 ;==================================================================================
 ; Motorola 68K - ASM test
-; Reverse-Case, Reverse the case of all chars in a given string.
+; ToggleCase, Toggle the case of all chars in a given string.
 ;==================================================================================
 
 assert_zero EQU $00D0000C
