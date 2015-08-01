@@ -35,8 +35,7 @@ m68k-elf-gnuobjdump -h -d -t fibonacci
 
 
 
------------------------------------------
------------------------------------------
+
 =========================================
 == Fengenstad Toolchain
 =========================================
@@ -67,4 +66,18 @@ cd Sources:asm-tests/
 monam uppercase
 
 
+=========================================
+== Sublime Text 68K package
+=========================================
 
+https://packagecontrol.io/packages/M68k%20Assembly
+
+/home/[username]/.config/sublime-text-3/Packages/
+
+cd /path/to/sublime/packages/folder
+git clone https://github.com/stevenjs/M68k-Assembly.git M68k-Assembly
+
+or
+
+cd /path/to/sublime/packages/folder
+curl -L https://github.com/stevenjs/M68k-Assembly/tarball/master | tar xf -
