@@ -1,5 +1,9 @@
+=========================================
+== GNU Assembler on Linux
+=========================================
+
 -----------------------------------------
-Install GNU Assembler on Linux
+Install
 -----------------------------------------
 
 wget -N "http://ftp.gnu.org/pub/gnu/binutils/binutils-2.19.1.tar.bz2"
@@ -27,3 +31,40 @@ Disassembly binaries
 -----------------------------------------
 
 m68k-elf-gnuobjdump -h -d -t fibonacci
+
+
+
+
+-----------------------------------------
+-----------------------------------------
+=========================================
+== Fengenstad Toolchain
+=========================================
+
+-----------------------------------------
+Install
+-----------------------------------------
+
+http://fengestad.no/m68k-amigaos-toolchain/
+cd /tmp && wget http://fengestad.no/m68k-amigaos-toolchain/m68k-amigaos_linux_i386.tar.gz
+cd /opt && sudo tar zxf /tmp/m68k-amigaos_linux_i386.tar.gz
+cd /usr/local/bin && sudo ln -s /opt/m68k-amigaos/bin/*m68k* .
+cd /usr/local/bin && sudo ln -s /opt/m68k-amigaos/bin/v* .
+
+-----------------------------------------
+Compile from Linux side
+-----------------------------------------
+
+cd /Amiga/phoenixwb/Sources/asm-tests/
+m68k-amigaos-as --register-prefix-optional -m68020 -M uppercase.s -o uppercase.o
+m68k-amigaos-ld uppercase.o -o uppercase
+
+-----------------------------------------
+Execute/Debug from Amiga side
+-----------------------------------------
+
+cd Sources:asm-tests/
+monam uppercase
+
+
+
