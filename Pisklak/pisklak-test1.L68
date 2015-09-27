@@ -1,0 +1,88 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.04
+Created On: 27/09/2015 10:44:46
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00001000                             7      ORG    $1000
+00001000  =0000000B                  8  range       EQU 11
+00001000  =00003000                  9  arry_addr   EQU $3000
+00001000                            10   
+00001000                            11   START:                  ; first instruction of program
+00001000  43F8 3000                 12      lea     arry_addr,A1
+00001004  2449                      13      move.l  A1,A2
+00001006  7202                      14      move.l  #2,D1
+00001008                            15     
+00001008                            16   WL:
+00001008  B2BC 0000000B             17      cmp.l   #range,D1
+0000100E  6E00 0024                 18      bgt     SIEVE
+00001012  22C1                      19      move.l  D1,(A1)+
+00001014  5281                      20      add.l   #1,D1    
+00001016  4EF8 1008                 21      jmp     WL  
+0000101A                            22   
+0000101A                            23  FL:
+0000101A                            24   
+0000101A  0C92 00000001             25      cmp.l   #1,(A2)
+00001020  6600 0012                 26      bne     SIEVE
+00001024  0C92 0000000B             27      cmp.l   #range,(A2)
+0000102A  6E00 0044                 28      bgt     e    *
+0000102E  588A                      29      adda.l  #4,A2
+00001030  4EF8 101A                 30      jmp     FL
+00001034                            31         
+00001034                            32   
+00001034                            33   
+00001034                            34  SIEVE:
+00001034  2212                      35      move.l (A2),D1
+00001036  2401                      36      move.l  D1,D2
+00001038  2002                      37      move.l  D2,D0
+0000103A  43F8 3000                 38      lea     arry_addr,A1
+0000103E                            39     
+0000103E                            40  .cl
+0000103E                            41     
+0000103E  B4BC 0000000B             42      cmp.l   #range,D2
+00001044  6C00 0024                 43      bge     .a
+00001048  D280                      44      add.l   D0,D1  
+0000104A  5581                      45      sub.l   #2,D1
+0000104C  E589                      46      lsl.l   #2,D1
+0000104E                            47     
+0000104E  2609                      48      move.l  A1,D3
+00001050  D681                      49      add.l   D1,D3
+00001052  B6B8 3024                 50      cmp.l   $3024,D3
+00001056  6D00 0012                 51      blt     .a
+0000105A  23BC 00000001 1000        52      move.l  #1,(A1,D1)
+00001062  D480                      53      add.l   D0,D2
+00001064  2202                      54      move.l  D2,D1  
+00001066  4EF8 103E                 55      jmp     .cl
+0000106A                            56   
+0000106A                            57  .a  
+0000106A  588A                      58      adda.l  #4,A2
+0000106C  4EF8 101A                 59      jmp     FL
+00001070                            60     
+00001070                            61  * Put program code here
+00001070                            62  e:
+00001070  FFFF FFFF                 63      SIMHALT             ; halt simulator
+00001074                            64   
+00001074                            65  * Put variables and constants here
+00001074                            66   
+00001074                            67      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ARRY_ADDR           3000
+E                   1070
+FL                  101A
+RANGE               B
+SIEVE               1034
+SIEVE:A             106A
+SIEVE:CL            103E
+START               1000
+WL                  1008

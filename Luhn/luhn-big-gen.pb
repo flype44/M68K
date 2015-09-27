@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#VALUE_COUNT      = 10
+#VALUE_COUNT      = 50
 #VALUE_MIN_LENGTH = 15
 #VALUE_MAX_LENGTH = 60
 

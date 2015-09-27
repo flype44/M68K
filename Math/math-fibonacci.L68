@@ -1,0 +1,66 @@
+00000000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.04
+Created On: 27/09/2015 10:33:31
+
+00000000                             1  ;====================================================
+00000000                             2  ; Motorola 68K - ASM test
+00000000                             3  ; Fibonacci
+00000000                             4  ;====================================================
+00000000                             5  
+00000000  =00D0000C                  6  assert_zero EQU $00D0000C  ; ASSERT ZERO Register
+00000000                             7  
+00000000                             8  ;====================================================
+00000000                             9  
+00000000                            10  START:
+00000000  41F9 0000002C             11       lea     Precalc,A0     ; Put precalculated values in A0
+00000006  7200                      12       moveq   #0,D1          ; D1 = 0 (1st fibonacci value)
+00000008  7401                      13       moveq   #1,D2          ; D2 = 1 (2nd fibonacci value)
+0000000A                            14  Loop:
+0000000A  2018                      15       move.l  (A0)+,D0       ; Put precalculated value in D0
+0000000C  0C80 FFFFFFFF             16       cmpi.l  #-1,D0         ; If D0 = -1
+00000012  6700 0014                 17       beq     Exit           ; Then Exit
+00000016  2601                      18       move.l  D1,D3          ; D3 = D1
+00000018  D682                      19       add.l   D2,D3          ; D3 = D2 + D3
+0000001A  2202                      20       move.l  D2,D1          ; D1 = D2
+0000001C  2403                      21       move.l  D3,D2          ; D2 = D3
+0000001E  9082                      22       sub.l   D2,D0          ; Should be 0
+00000020  23C0 00D0000C             23       move.l  D0,assert_zero ; Raise error if D0 != 0
+00000026  60E2                      24       bra     Loop           ; Continue
+00000028                            25  Exit:
+00000028  4E72 FFFF                 26       stop    #-1            ; Stop execution
+0000002C                            27    
+0000002C                            28  ;====================================================
+0000002C                            29    
+0000002C                            30  Precalc:
+0000002C= 00000001 00000002 ...     31       dc.l $00000001,$00000002,$00000003,$00000005
+0000003C= 00000008 0000000D ...     32       dc.l $00000008,$0000000D,$00000015,$00000022
+0000004C= 00000037 00000059 ...     33       dc.l $00000037,$00000059,$00000090,$000000E9
+0000005C= 00000179 00000262 ...     34       dc.l $00000179,$00000262,$000003DB,$0000063D
+0000006C= 00000A18 00001055 ...     35       dc.l $00000A18,$00001055,$00001A6D,$00002AC2
+0000007C= 0000452F 00006FF1 ...     36       dc.l $0000452F,$00006FF1,$0000B520,$00012511
+0000008C= 0001DA31 0002FF42 ...     37       dc.l $0001DA31,$0002FF42,$0004D973,$0007D8B5
+0000009C= 000CB228 00148ADD ...     38       dc.l $000CB228,$00148ADD,$00213D05,$0035C7E2
+000000AC= 005704E7 008CCCC9 ...     39       dc.l $005704E7,$008CCCC9,$00E3D1B0,$01709E79
+000000BC= 02547029 03C50EA2 ...     40       dc.l $02547029,$03C50EA2,$06197ECB,$09DE8D6D
+000000CC= 0FF80C38 19D699A5 ...     41       dc.l $0FF80C38,$19D699A5,$29CEA5DD,$43A53F82
+000000DC= 6D73E55F B11924E1 ...     42       dc.l $6D73E55F,$B11924E1,$1E8D0A40,$CFA62F21
+000000EC= EE333961 BDD96882 ...     43       dc.l $EE333961,$BDD96882,$AC0CA1E3,$69E60A65
+000000FC= 15F2AC48 7FD8B6AD ...     44       dc.l $15F2AC48,$7FD8B6AD,$95CB62F5,$15A419A2
+0000010C= AB6F7C97 C1139639 ...     45       dc.l $AB6F7C97,$C1139639,$6C8312D0,$2D96A909
+0000011C= 9A19BBD9 C7B064E2 ...     46       dc.l $9A19BBD9,$C7B064E2,$61CA20BB,$297A859D
+0000012C= FFFFFFFF                  47       dc.l -1
+00000130                            48       
+00000130                            49       END START
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ASSERT_ZERO         D0000C
+EXIT                28
+LOOP                A
+PRECALC             2C
+START               0
