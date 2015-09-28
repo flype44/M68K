@@ -44,7 +44,7 @@ LOOP:
 	BNE		LOOP			; Continue while != 0
 EXIT:
 	SUB.W	(A1),D7			; Total Result - Total Precalc
-	MOVE.L	D0,ASSERT_ZERO	; Assert D0 == 0
+	MOVE.L	D7,ASSERT_ZERO	; Assert D7 == 0
 	TST		$0				; FLUSH
 	;STOP	#-1				; STOP SIM
 	RTS
