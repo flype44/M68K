@@ -4,9 +4,10 @@
 
 EnableExplicit
 
-#VALUE_COUNT      = 50
-#VALUE_MIN_LENGTH = 15
-#VALUE_MAX_LENGTH = 60
+#VALUE_COUNT          = 500
+#VALUE_MIN_LENGTH     = 15
+#VALUE_MAX_LENGTH     = 60
+#PRECALC_MAX_PER_LINE = 10
 
 ;==========================================================
 
@@ -82,17 +83,20 @@ If CreateFile(0, "luhn-big-" + FormatDate("%yyyy%mm%dd%hh%ii", Date()) + ".s")
   W("PRECALC:")
   
   i = 0
+  line = ""
   ForEach results()
     total + results()
-    line + results() + ","
+    line + RSet(Str(results()), 2, "0") + ","
     i + 1
-    If i > 30
+    If i >= #PRECALC_MAX_PER_LINE
       W(" DC.B " + Left(line, Len(line) - 1))
       line = ""
       i = 0
     EndIf
   Next
-  
+  If line
+    W(" DC.B " + Left(line, Len(line) - 1))
+  EndIf
   W(" DC.W " + Str(total))
   W("")
   W(";==========================================================")
@@ -102,7 +106,7 @@ If CreateFile(0, "luhn-big-" + FormatDate("%yyyy%mm%dd%hh%ii", Date()) + ".s")
   CloseFile(0)
   
 EndIf
-; IDE Options = PureBasic 5.31 (Linux - x64)
+; IDE Options = PureBasic 5.40 LTS Beta 3 (Linux - x64)
 ; CursorPosition = 6
 ; Folding = 9
 ; EnableUnicode
