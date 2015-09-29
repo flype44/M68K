@@ -1,0 +1,15 @@
+Short:        Hardware scrolling demo
+Author:       mscarano@libero.it (Massimiliano Scarano)
+Uploader:     mscarano libero it (Massimiliano Scarano)
+Type:         demo/intro
+Version:      1.0 20150916
+Architecture: m68k-amigaos
+Replaces:     demo/intro/HardwareScrolling_V1_0.lha
+Distribution: Aminet
+
+This demo shows how to make a hardware scrolling through a copperlist.
+A 640x256x5 playfield is scrolled in a 320x256x5 screen right and left.
+Press left mouse button to exit.
+
+Written in Assembly language,
+source code supplied for educational purpose only.
