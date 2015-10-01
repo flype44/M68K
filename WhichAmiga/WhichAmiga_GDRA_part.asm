@@ -13,23 +13,19 @@
 ;============================================
 
 ; TODO:
-;AttnFlags(a6)
 ;LIB_VERSION(a6)
 ;Enable
 ;Disable
-;Supervisor
 ;vbr
 ;PCR
 ;BUSCR
 ;cacr
-;CACRF_EnableI
-;CACRF_ClearI
-;CACRF_ClearD
-;CACRF_WriteAllocate
-;CACRB_EnableI
-;CACRB_WriteAllocate
 
-; Processors and Co-processors:
+ExecBase   EQU $4
+Supervisor EQU -30
+AttnFlags  EQU 296
+
+; Processors and Co-processors
 AFB_68010 EQU 0 ; also set for 68020
 AFB_68020 EQU 1 ; also set for 68030
 AFB_68030 EQU 2 ; also set for 68040
@@ -37,6 +33,10 @@ AFB_68040 EQU 3 ;
 AFB_68881 EQU 4	; also set for 68882
 AFB_68882 EQU 5 ; 
 AFB_FPU40 EQU 6 ; Set if 68040 FPU
+
+; Cache manipulation Bits
+CACRB_EnableI EQU 0
+CACRB_WriteAllocate EQU 13
 
 ; Cache manipulation Flags
 CACRF_EnableI       EQU (1<<0)  ; Enable instruction cache
@@ -66,14 +66,14 @@ START:
 
 ExtAttnFlags:
     movem.l d1/d2/a0-a1/a6,-(sp)
-    move.l  (4).w,a6
-    move.w  (AttnFlags,a6),d2
-    tst.l   NoHW
-    bne.b   .nohw
-    cmp.w   #37,(LIB_VERSION,a6)
-    bhs.b   .test060
-    jsr     Test_030_040_882
-    or.w    d0,d2
+    move.l  (4).w,a6             ; ExecBase
+    move.w  (AttnFlags,a6),d2    ; 
+    tst.l   NoHW                 ; 
+    bne.b   .nohw                ; 
+    cmp.w   #37,(LIB_VERSION,a6) ; 
+    bhs.b   .test060             ; 
+    jsr     Test_030_040_882     ; 
+    or.w    d0,d2                ; 
 .test060
     btst    #AFB_68040,d2        ; You must have 68040 flag
     beq.b   .no060               ; set to have 68060.
@@ -98,7 +98,7 @@ ExtAttnFlags:
 
 Test_030_040_882:
 	move.l	a5,-(sp)
-	lea	(.sv,pc),a5
+	lea	    (.sv,pc),a5
 	call	Supervisor
 	move.l	(sp)+,a5
 	rts
