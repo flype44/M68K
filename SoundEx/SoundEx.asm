@@ -4,6 +4,7 @@
 ; soundex('Script') = 'S613'
 ;==========================================================
 ; http://phpjs.org/functions/soundex/
+; https://github.com/kvz/phpjs/blob/master/functions/strings/soundex.js
 ;==========================================================
 
 ;==========================================================
@@ -23,18 +24,24 @@ RESULT:
 	EVEN
 
 MAIN:
+	CLR.L   D6             ; Error counter
+	CLR.L   D7             ; Store precalc value
 	LEA.L	VALUES,A0      ; values
 	LEA.L   RESULT,A1      ; result
 MAIN_LOOP:
-	MOVE.L  (A0)+,D7       ; precalculated soundex value
-	BEQ     MAIN_EXIT      ; exit if no more value
+	MOVE.L  (A0)+,D7       ; precalc value
+	BEQ.B   MAIN_EXIT      ; exit if no more value
 	JSR		SOUNDEX        ; soundex(value)
-	SUB.L   (A1),D7        ; D7 = precalculated - calculated
+	SUB.L   (A1),D7        ; D7 = precalc - calc
+	BEQ     MAIN_ASSERT    ; Branch to Assert if D7 = 0
+	ADDQ.L  #1,D6          ; Increment Error counter
+MAIN_ASSERT:
 	MOVE.L  D7,ASSERT_ZERO ; Assert D7 = 0
 	ADDA.L  D1,A0          ; addr + length of value
 	ADDQ    #1,A0          ; next value
 	BRA     MAIN_LOOP      ; else continue
 MAIN_EXIT:
+	MOVE.L  D6,ASSERT_ZERO ; Assert D6 = 0
 	STOP #-1               ; stop the program
 
 ;==========================================================
@@ -95,6 +102,11 @@ SOUNDEX_EXIT:
     BGT     SOUNDEX_EXIT1  ; continue
     SUBI.B  #32,(A1)       ; A1[0] = To Upper
 SOUNDEX_EXIT1:
+	TST.B   (A0,D1)        ; Skip remaining chars
+	BEQ     SOUNDEX_EXIT2  ; continue
+	ADDQ    #1,D1          ; D1++
+	BRA     SOUNDEX_EXIT1  ; skip next
+SOUNDEX_EXIT2:
 	RTS                    ; exit subroutine
 SOUNDEX_TBL:
 	DC.B 0,1,2,3,0,1       ; A,B,C,D,E,F
@@ -115,7 +127,7 @@ VALUES:
 	DC.B 'S300','sit',0
 	DC.B 'A530','amet',0
 	DC.B 'C522','consectetur',0
-	DC.B 'A112','adipiscing',0
+	DC.B 'A312','adipiscing',0
 	DC.B 'E430','elit',0
 	DC.B 'I532','Integer',0
 	DC.B 'A423','aliquet',0
@@ -137,7 +149,7 @@ VALUES:
 	DC.B 'P415','pulvinar',0
 	DC.B 'S342','sodales',0
 	DC.B 'A425','Aliquam',0
-	DC.B 'A100','at',0
+	DC.B 'A300','at',0
 	DC.B 'M320','metus',0
 	DC.B 'T516','tempor',0
 	DC.B 'B453','blandit',0
@@ -155,16 +167,16 @@ VALUES:
 	DC.B 'U436','ultricies',0
 	DC.B 'V400','vel',0
 	DC.B 'Q200','Quisque',0
-	DC.B 'A100','at',0
+	DC.B 'A300','at',0
 	DC.B 'U650','urna',0
 	DC.B 'V240','vehicula',0
 	DC.B 'P260','posuere',0
 	DC.B 'D460','dolor',0
-	DC.B 'A100','at',0
+	DC.B 'A300','at',0
 	DC.B 'E415','eleifend',0
 	DC.B 'L000','leo',0
 	DC.B 'I500','In',0
-	DC.B 'A100','at',0
+	DC.B 'A300','at',0
 	DC.B 'F212','faucibus',0
 	DC.B 'A620','arcu',0
 	DC.B 'N500','non',0
@@ -221,8 +233,10 @@ VALUES:
 	DC.B 'D500','diam',0
 	DC.B 'C520','congue',0
 	DC.B 'N200','nec',0
-	DC.B 0
+	DC.L 0
 
 ;==========================================================
 ; End of file
 ;==========================================================
+	
+	END
