@@ -22,8 +22,8 @@ For i = 0 To 199
   If a <> b
     c = PGCD2(a, b)
     If b <> c And c > 40
-      d = Random(5, 1)
-      Debug "    DC.W " + a + "," + b + "," + c + "," + Int(Sqr(c)) + "," + d + "," + Int(Pow(c, d))
+      d = Random(3, 1)
+      Debug "    DC.L " + a + "," + b + "," + c + "," + Int(Sqr(c)) + "," + d + "," + Int(Pow(c, d))
     Else
       i - 1
       tmp + 1
@@ -60,8 +60,7 @@ Debug tmp
 ; Debug "    DC.L 0"
 
 ; IDE Options = PureBasic 5.40 LTS Beta 3 (Linux - x64)
-; CursorPosition = 26
-; FirstLine = 8
+; CursorPosition = 25
 ; Folding = -
 ; EnableUnicode
 ; EnableXP
