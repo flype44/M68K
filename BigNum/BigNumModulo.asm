@@ -5,6 +5,9 @@
 ;==========================================================
 ; https://github.com/flype44/M68K/blob/master/BigNum/BigNumModulo.asm
 ;==========================================================
+; Calculated values can be checked here :
+; http://www.javascripter.net/math/calculators/100digitbigintcalculator.htm
+;==========================================================
 
 ;==========================================================
 ; Constants
