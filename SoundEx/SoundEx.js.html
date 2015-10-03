@@ -1,0 +1,88 @@
+<html>
+<script>
+
+function soundex0(str) {
+
+  str = (str + '').toUpperCase();
+
+  if (!str) return '';
+
+  var sdx = [0, 0, 0, 0],
+    m = { B: 1,F: 1,P: 1,V: 1,C: 2,G: 2,
+          J: 2,K: 2,Q: 2,S: 2,X: 2,Z: 2,
+          D: 3,T: 3,L: 4,M: 5,N: 5,R: 6 },
+    i = 0, j, s = 0, c, p;
+
+  while ((c = str.charAt(i++)) && s < 4) {
+    if (j = m[c]) {
+      if (j !== p) {
+        sdx[s++] = p = j;
+      }
+    } else {
+      s += i === 1;
+      p = 0;
+    }
+  }
+
+  sdx[0] = str.charAt(0);
+  return sdx;
+}
+
+function soundex1(A0) {
+
+  var D0, D1 = 0, D2, D3, D4 = 0;
+
+  var A2 = {
+    B: 1, F: 1, P: 1, V: 1,
+    C: 2, G: 2, J: 2, K: 2,
+    Q: 2, S: 2, X: 2, Z: 2,
+    D: 3, T: 3, L: 4, M: 5, 
+    N: 5, R: 6
+  }
+  
+  var A3 = [0,0,0,0];
+
+  A0 = A0.toUpperCase();
+
+  while ((D0 = A0.charAt(D1++)) && D4 < 4) {
+    D2 = A2[D0];
+    if (D2) {
+      if (D2 != D3) {
+        D3 = D2;
+        if (D4 != 0)
+          A3[D4] = D2;
+        D4++;
+      }
+    } else {
+      if (D1 == 1)
+        D4++;
+      D3 = 0;
+    }
+  }
+  
+  A3[0] = A0.charAt(0);
+  return A3;
+}
+
+var str1 = '';
+str1 += 'Lorem ipsum dolor sit amet consectetur adipiscing elit ';
+str1 += 'Integer aliquet in nisi sed porta Quisque et nisl viverra ';
+str1 += 'posuere mauris ac porttitor nunc Sed ornare pulvinar sodales ';
+str1 += 'Aliquam at metus tempor blandit enim id viverra leo ';
+str1 += 'Duis consectetur est neque non iaculis nunc ultricies vel ';
+str1 += 'Quisque at urna vehicula posuere dolor at eleifend leo ';
+str1 += 'In at faucibus arcu non aliquam libero Nam mattis mi neque ';
+str1 += 'vitae vestibulum eros placerat ut Suspendisse potenti ';
+str1 += 'Quisque viverra mi eu nulla molestie et pharetra odio porttitor ';
+str1 += 'Donec elementum sodales condimentum Fusce faucibus eros id turpis suscipit semper ';
+str1 += 'Pellentesque urna erat volutpat quis eros quis aliquam facilisis elit ';
+str1 += 'Maecenas porta lacinia nisi eu tempor diam congue nec';
+
+var words = str1.split(' ');
+
+words.forEach(function(word) {
+  console.log('  DC.B \'' + soundex1(word).join('') + '\',\'' + word + '\',0');
+});
+
+</script>
+</html>
