@@ -6,7 +6,7 @@
 ;==========================================================
 
 ;==========================================================
-	
+    
     bra     Start
 
 ;==========================================================
@@ -40,20 +40,20 @@ CopyRoutineLine:
 ;==========================================================
 
 Start:
-	move.l  #CodeAEnd,d0
-	sub.l   #CodeABegin,d0
-	move.l  #CodeBEnd,d0
-	sub.l   #CodeBBegin,d0
+    move.l  #CodeAEnd,d0
+    sub.l   #CodeABegin,d0
+    move.l  #CodeBEnd,d0
+    sub.l   #CodeBBegin,d0
     lea     OutsideRoutine1,a3
     lea     OutsideRoutine2,a4
-	move.l  #size-1,d0
-	move.l  #count-1,d1
-	lea     CodeABegin,a0
-	lea     CodeAHolder,a1
-	jsr     CopyRoutine
-	lea     CodeBBegin,a0
-	lea     CodeBHolder,a1
-	jsr     CopyRoutine
+    move.l  #size-1,d0
+    move.l  #count-1,d1
+    lea     CodeABegin,a0
+    lea     CodeAHolder,a1
+    jsr     CopyRoutine
+    lea     CodeBBegin,a0
+    lea     CodeBHolder,a1
+    jsr     CopyRoutine
     clr.l   d0
     clr.l   d1
     clr.l   d5
@@ -68,9 +68,9 @@ InsideRoutine2:
     addq    #1,d5
     rts
 CodeAHolder:
-	ds.b    (size*count)
+    ds.b    (size*count)
 CodeBHolder:
-	ds.b    (size*count)
+    ds.b    (size*count)
 Exit:
     add.l   d1,d0
     add.l   d2,d0
@@ -86,11 +86,11 @@ Exit:
     move.l  d6,assert_zero
     sub.l   #$0000ffff,d7
     move.l  d7,assert_zero
-	stop    #-1
+    stop    #-1
 
 ;==========================================================
-	
-	section .fastram
+    
+    section .fastram
 
 Spacer1:
     ds.b    $2000
