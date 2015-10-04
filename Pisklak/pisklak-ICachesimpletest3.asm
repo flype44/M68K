@@ -13,13 +13,13 @@ code_to_copy:
     jmp     do_test
 
 Assert_zero_check:
-    sub     #210,D4  ; this is sum of all numbers from 0 to Ntimes (for 10 = 55)
+    sub     #55,D4  ; this is sum of all numbers from 0 to Ntimes (for 10 = 55)
     move.l  D4,ASSERT_ZERO
     jmp END
 
 *  ----------------- Constant declarations --------------------
 
-Ntimes      EQU 20     ; how many times code will be copied
+Ntimes      EQU 10     ; how many times code will be copied
 alias_step  EQU $4000   ; alias step... for Apolloo ICache should be 16k = $4000
 ASSERT_ZERO EQU $00D0000C
 Nbytes      EQU 1+Assert_zero_check-code_to_copy ; numbers of bytes to copy should be equal to your copied code size
@@ -31,6 +31,7 @@ START:                  ; first instruction of program
     clr.l   D1
     clr.l   D2
     clr.l   D3
+    clr.l   D4
     lea     Memory,A1
     lea     Memory,A2
 copy_N_times:  
@@ -76,5 +77,5 @@ END:
 
 * Put variables and constants here
 
-    END
+    END START
 
