@@ -1,6 +1,6 @@
 ;==========================================================
 ; ASM Testcase
-; flype, 2015-10-04, v1.0
+; flype, 2015-10-04, v1.1
 ;==========================================================
 ; https://github.com/flype44/M68K/blob/master/ICache/icache-test-2.asm
 ;==========================================================
@@ -11,8 +11,8 @@
 
 ;==========================================================
 
-size  equ 10    ; Number of bytes in routines
-count equ $1987 ; Number of times we copy the routine
+size  equ 10  ; Number of bytes in routines
+count equ $50 ; Number of times we copy the routine
 
 assert_zero equ $00D0000C
 
@@ -67,6 +67,7 @@ InsideRoutine2:
     divu.l  d0,d1:d2
     addq    #1,d5
     rts
+    ds.b    $4000
 CodeAHolder:
     ds.b    (size*count)
 CodeBHolder:
@@ -74,13 +75,13 @@ CodeBHolder:
 Exit:
     add.l   d1,d0
     add.l   d2,d0
-    sub.l   #$d95a3d60,d0
+    sub.l   #$50e40a17,d0
     move.l  d0,assert_zero
-    sub.l   #$00206198,d1
+    sub.l   #$00013c48,d1
     move.l  d6,assert_zero
-    sub.l   #$d9394ab0,d2
+    sub.l   #$50e2062b,d2
     move.l  d6,assert_zero
-    sub.l   #$330e,d5
+    sub.l   #$a0,d5
     move.l  d6,assert_zero
     sub.l   #$0000ffff,d6
     move.l  d6,assert_zero
