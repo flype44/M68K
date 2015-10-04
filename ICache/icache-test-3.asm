@@ -1,21 +1,8 @@
 ;==========================================================
 ; ASM Testcase
-; flype, 2015-10-04, v1.1
+; flype, 2015-10-04, v1.0
 ;==========================================================
-; https://github.com/flype44/M68K/blob/master/ICache/icache-test-2.asm
-;==========================================================
-; 2015-10-04 21:17:50
-; Apollo Core Version : 2626 to 2631
-; One bug revealed in ICache.
-; 21:17:50 BigGun Flype : your testcase 2 triggers a FAILURE in Icache.
-; 21:18:17 BigGun Only problem is that it takes like 1 hour to sim 
-; 21:27:29 BigGun If we find bug this is good. 
-; 21:27:41 BigGun As soon as I see bug in sim - we can quickly fix it 
-; 21:28:28 BigGun Flype : its good I another bug in SIM! 
-; 21:28:41 BigGun I need to review this now
-; 21:53:13 BigGun The testcase triggers a SIM-failure of the Icache and a Warning in CPU 
-; 21:53:22 BigGun So two thinks for me to review and fix now 
-; 21:53:37 BigGun I think tomorrow we have some new image 
+; https://github.com/flype44/M68K/blob/master/ICache/icache-test-3.asm
 ;==========================================================
 
 ;==========================================================
