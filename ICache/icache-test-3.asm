@@ -78,11 +78,11 @@ Exit:
     sub.l   #$50e40a17,d0
     move.l  d0,assert_zero
     sub.l   #$00013c48,d1
-    move.l  d6,assert_zero
+    move.l  d1,assert_zero
     sub.l   #$50e2062b,d2
-    move.l  d6,assert_zero
+    move.l  d2,assert_zero
     sub.l   #$a0,d5
-    move.l  d6,assert_zero
+    move.l  d5,assert_zero
     sub.l   #$0000ffff,d6
     move.l  d6,assert_zero
     sub.l   #$0000ffff,d7

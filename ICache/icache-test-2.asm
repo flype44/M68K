@@ -90,11 +90,11 @@ Exit:
     sub.l   #$d95a3d60,d0
     move.l  d0,assert_zero
     sub.l   #$00206198,d1
-    move.l  d6,assert_zero
+    move.l  d1,assert_zero
     sub.l   #$d9394ab0,d2
-    move.l  d6,assert_zero
+    move.l  d2,assert_zero
     sub.l   #$330e,d5
-    move.l  d6,assert_zero
+    move.l  d5,assert_zero
     sub.l   #$0000ffff,d6
     move.l  d6,assert_zero
     sub.l   #$0000ffff,d7
