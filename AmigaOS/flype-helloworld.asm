@@ -1,5 +1,6 @@
 ;==========================================================
-; "Hello World" in AmigaOS
+; AmigaOS Hello World
+; flype, 2015-10-05, v1.0
 ; https://github.com/flype44/M68K/blob/master/AmigaOS/flype-helloworld.asm
 ;==========================================================
 
@@ -18,9 +19,12 @@ Start:
     jsr     Print            ; Print Hello World in CLI
     jsr     Print            ; Print Hello World in CLI
     jsr     CloseDOS         ; Close DOS library
+    bra     Exit             ; Branch to Exit
+ExitWithError:
+    moveq   #1,d0            ; AmigaDOS return code (error)
 Exit:
-    moveq   #0,d0            ; AmigaDOS return code
-    rts
+    moveq   #0,d0            ; AmigaDOS return code (success)
+    rts                      ; Stop program
 
 ;==========================================================
 ;   ROUTINES
@@ -30,7 +34,9 @@ OpenDOS:
     move.l  ExecBase,a6      ; A6 = Exec base
     lea     DosName,a1       ; A1 = Library name
     moveq   #0,d0            ; D0 = Library version
-    jsr     (OpenLibrary,a6) ; D0 = Open DOS library
+    jsr     OpenLibrary(a6)  ; D0 = Open DOS library
+    tst.l   d0               ; If D0 = NULL
+    beq.s   ExitWithError    ; Then exit with error
     move.l  d0,a6            ; A6 = DOS base
     rts
 
