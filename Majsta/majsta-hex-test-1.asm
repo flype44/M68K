@@ -1,8 +1,6 @@
 
-        BRA     START
-        
-HDIGIT: DS.B 1
-ACHAR:  DS.B 1
+        DC.L    0
+        DC.L    START
 
 START:         
         MOVE.B  HDIGIT,D0
@@ -18,5 +16,8 @@ HEXDIGIT:
 ADDZ:
         ADD.B   #'0',D0
         RTS
+        
+HDIGIT: DS.B 1
+ACHAR:  DS.B 1
 
         END
