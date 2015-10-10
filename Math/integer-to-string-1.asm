@@ -25,34 +25,37 @@ Main:
     move.l  #StrStart,d1      ; D1 = StrStart
     jsr     PrintString       ; output string in CLI
     lea     StrBuffer,a0      ; A0 = String Buffer
-    lea     Precalc,a1        ; A1 = Precalc values
-    moveq   #0,d1             ; D1 = 0 (1st fibonacci value)
+    lea     Precalc,a5        ; A1 = Precalc values
+    moveq   #0,d5             ; D1 = 0 (1st fibonacci value)
     moveq   #1,d2             ; D2 = 1 (2nd fibonacci value)
+    clr.l   d6                ; error counter
 MainLoop:
     clr.l   d0                ; D0 = 0
-    move.l  (a1)+,d4          ; D4 = next precalc value
+    move.l  (a5)+,d4          ; D4 = next precalc value
     beq     MainExit          ; exit if d4 = 0
-    move.l  d1,d3             ; D3 = D1
+    move.l  d5,d3             ; D3 = D1
     add.l   d2,d3             ; D3 = D2 + D3
-    move.l  d2,d1             ; D1 = D2
+    move.l  d2,d5             ; D1 = D2
     move.l  d3,d2             ; D2 = D3
     move.l  d2,d0             ; D0 = calculated fibonacci
     jsr     PrintInteger      ; output number in CLI
     move.l  d4,d0             ; D0 = precalculated fibonacci
     jsr     PrintInteger      ; output number in CLI
-    sub.l   d2,d4
-    beq     MainSuccess
-    move.l  d1,-(sp)
+    sub.l   d2,d4             ; D4 = D4 - D2
+    beq.l   MainSuccess       ; branch to success if D4 = 0
+    add.l   #1,d6             ; increment error counter
     move.l  #StrFailure,d1    ; D1 = StrStart
     bra     MainContinue      ; continue
 MainSuccess:
-    move.l  d1,-(sp)
     move.l  #StrSuccess,d1    ; D1 = StrStart
 MainContinue:
     jsr     PrintString       ; output string in CLI
-    move.l  (sp)+,d1
     bra     MainLoop          ; continue
 MainExit:
+    move.l  #StrErrCnt,d1     ; D1 = StrErrCnt
+    jsr     PrintString       ; output string in CLI
+    move.l  d6,d0             ; D0 = error count
+    jsr     PrintInteger      ; output number in CLI
     jsr     CloseDOS          ; close DOS library
     move.l  #StrStop,d1       ; D1 = StrStop
     jsr     PrintString       ; output string in CLI
@@ -117,14 +120,15 @@ CloseDOS:
 
 DosBase    dc.l 0
 DosName    dc.b "dos.library",0
-StrHello   dc.b "Hello team ;)",CR,0
-StrStart   dc.b "Start Fibonacci",CR,0
-StrStop    dc.b "End of test",CR,0
+StrStart   dc.b "Start Fibonacci",CR,CR,0
+StrStop    dc.b CR,"End of test",CR,0
 StrSuccess dc.b "Success",CR,CR,0
 StrFailure dc.b "Failure",CR,CR,0
-StrBuffer  ds.b 32 ; String Buffer for CLI output
+StrErrCnt  dc.b "Error count : ",0
 
-EVEN
+    EVEN
+
+StrBuffer  ds.b 32 ; String Buffer for CLI output
 
 Precalc:
     ; fibonacci values
