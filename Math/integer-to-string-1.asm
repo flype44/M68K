@@ -43,10 +43,14 @@ MainLoop:
     jsr     PrintInteger      ; output number in CLI
     sub.l   d2,d4             ; D4 = D4 - D2
     beq.l   MainSuccess       ; branch to success if D4 = 0
+    move.l  d4,d0             ; D0 should be 0
+    jsr     PrintInteger      ; output number in CLI
     add.l   #1,d6             ; increment error counter
     move.l  #StrFailure,d1    ; D1 = StrStart
     bra     MainContinue      ; continue
 MainSuccess:
+    move.l  d4,d0             ; D0 should be 0
+    jsr     PrintInteger      ; output number in CLI
     move.l  #StrSuccess,d1    ; D1 = StrStart
 MainContinue:
     jsr     PrintString       ; output string in CLI
@@ -56,9 +60,9 @@ MainExit:
     jsr     PrintString       ; output string in CLI
     move.l  d6,d0             ; D0 = error count
     jsr     PrintInteger      ; output number in CLI
-    jsr     CloseDOS          ; close DOS library
     move.l  #StrStop,d1       ; D1 = StrStop
     jsr     PrintString       ; output string in CLI
+    jsr     CloseDOS          ; close DOS library
     moveq   #0,d0             ; return code
     rts                       ; stop execution
 
