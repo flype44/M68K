@@ -2,7 +2,8 @@
 ;    dc.l    Main
 ;    section .fastram
 
-assert_zero EQU $00D0000C  ; ASSERT ZERO Register
+ASSERT_ZERO EQU $00D0000C  ; Write a value <> 0 to it will kill SIM.
+ASSERT_NORW EQU $00D0001C  ; Read or Write to/from it will kill SIM.
 
 Main:
     lea     MainBase1,a0
@@ -45,53 +46,23 @@ Main6:
 
 Routine1:
     swap    d0
-    nop
-    nop
-    nop
-    nop
-    nop
     jsr     Routine3(pc)
     rts
 
 RoutineTrap1:
-    trap #1
-    trap #1
-    trap #1
-    trap #1
-    trap #1
-    trap #1
-    trap #1
-    trap #1
-    trap #1
-    trap #1
+    move.l  d0,ASSERT_NORW
 
 Routine2:
     addq    #1,d0
     rts
 
 RoutineTrap2:
-    trap #1
-    trap #1
-    trap #1
-    trap #1
-    trap #1
-    trap #1
-    trap #1
-    trap #1
+    move.l  d0,ASSERT_NORW
 
 Routine3:
-    nop
-    nop
-    nop
-    nop
     bvs     Routine3
     jsr     Routine4(pc)
     bvc     Routine2
-    nop
-    nop
-    nop
-    nop
-    nop
     rts
 
 Routine4:
@@ -107,9 +78,9 @@ Routine5:
 
 RoutineExit:
     sub.l   #$05eaca33,d0
-    move.l  d0,assert_zero
+    move.l  d0,ASSERT_ZERO
     sub.l   #$5,d1
-    move.l  d1,assert_zero
+    move.l  d1,ASSERT_ZERO
     stop    #-1
 
 MainBase1:
