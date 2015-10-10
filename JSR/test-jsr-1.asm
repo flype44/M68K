@@ -25,7 +25,8 @@ MainLoop:
     beq     Main4
 Main1:
     jsr     ([8*2+0,a0],0)
-    bra     MainLoop
+    dbf     d0,MainLoop
+    bra     RoutineExit
 Main2:
     jsr     ([8*2+4,a0],0)
     bra     MainLoop
@@ -105,7 +106,7 @@ Routine5:
     rts
 
 RoutineExit:
-    sub.l   #$05ecca35,d0
+    sub.l   #$05eaca33,d0
     move.l  d0,assert_zero
     sub.l   #$5,d1
     move.l  d1,assert_zero
