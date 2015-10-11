@@ -122,6 +122,10 @@ CloseDOS:
 ; Data Section
 ;==========================================================
 
+MainBase:
+    dc.l PrintInteger
+    dc.l PrintString
+
 DosBase    dc.l 0
 DosName    dc.b "dos.library",0
 StrStart   dc.b "Start Fibonacci",CR,CR,0
