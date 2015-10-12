@@ -1,0 +1,62 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>BCLR</title>
+
+<h1>BCLR</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>~(&lt;number&gt; of Destination) --&gt;; Z;
+<br>
+<code>  </code>0 --&gt;; &lt;bit number&gt; of Destination
+</p><p>
+</p><p>
+<b>Assembler Syntax:</b>  
+<br>
+<code>  </code>BCLR  Dn, &lt;ea&gt;
+<br>
+<code>  </code>BCLR  #&lt;data&gt;, &lt;ea&gt;
+</p><p>
+<b>Attributes:</b>  Size = (Byte, Long)
+</p><p>
+<b>Description:</b>  Tests a bit in the destination operand and sets 
+<br>
+<code>  </code>the Z condition code appropriately, then clears the specified
+<br>
+<code>  </code>bit in the destination.  When the destination is a data reg-<code>  </code>
+<br>
+<code>  </code>ister, any of the 32 bits can be specified by the modulo 
+<br>
+<code>  </code>32-bit number.  When the destination is a memory 
+<br>
+<code>  </code>location, the operation is a byte operation, and the bit 
+<br>
+<code>  </code>number is modulo 8.  In all cases, bit zero refers to the 
+<br>
+<code>  </code>least significant bit.  The bit number for this operation 
+<br>
+<code>  </code>may be specified in either of two ways:
+<br>
+<code>  </code><code>  </code>1.  Immediate -- The bit number is specified in a 
+<br>
+<code>  </code><code>  </code><code>  </code>second word of the instruction.
+<br>
+<code>  </code><code>  </code>2.  Register -- The specified data register contains 
+<br>
+<code>  </code><code>  </code><code>  </code>the bit number.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Not affected.
+<br>
+<code>  </code>N   Not affected.
+<br>
+<code>  </code>Z   Set if the bit tested is zero.  Cleared otherwise.
+<br>
+<code>  </code>V   Not affected.
+<br>
+<code>  </code>C   Not affected.
+</p><p>
+
+</p></body></html>

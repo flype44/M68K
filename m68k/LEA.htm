@@ -1,0 +1,35 @@
+<HTML><BODY>
+<title>LEA</title>
+
+<H1>LEA</H1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>&lt;ea&gt; --&gt;; An
+<p>
+<b>Assembler Syntax:</b>
+<br>
+<code>  </code>LEA &lt;ea&gt;,An
+<p>
+<b>Attributes:</b>  Size = (Long)
+<p>
+<b>Description:</b>  Loads the effective address into the specified
+<br>
+<code>  </code>address register.  All 32 bits of the address register
+<br>
+<code>  </code>are affected by this instruction.
+<p>
+<b>Condition Codes:</b>
+<br>
+<code>  </code>Not affected.
+<p>
+<b>Example:</b><br>
+<code>
+<br>
+A1= $00011004<br>
+LEA ($2000,A1),A2<br>
+Result:<br>
+A2 = $00013004<br>
+<br>
+
+</BODY></HTML>

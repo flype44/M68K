@@ -1,0 +1,46 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>SWAP</title>
+
+<h1>SWAP</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>Register [31:16] \s¬--&gt;; Register [15:0]
+</p><p>
+<b>Assembler Syntax:</b> 
+<br>
+<code>  </code>SWAP  Dn
+</p><p>
+<b>Attributes:</b>  Size = (Word)
+</p><p>
+<b>Description:</b>  Exchange the 16-bit words (halves) of a 
+<br>
+<code>  </code>data register.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Not affected.
+<br>
+<code>  </code>N   Set if the most significant bit of the 32-bit result is 
+<br>
+<code>  </code><code>  </code>set.  Cleared otherwise.
+<br>
+<code>  </code>Z   Set if the 32-bit result is zero.  Cleared otherwise.
+<br>
+<code>  </code>V   Always cleared.
+<br>
+<code>  </code>C   Always cleared.
+</p><p>
+
+<b>Example:</b><br>
+<code>
+<br>
+1)<br>
+D0= $12345678<br>
+SWAP D0<br>
+<br>
+Result:<br>
+D0 = $56781234<br <="" body="">
+</code></p></body></html>

@@ -1,0 +1,53 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>MOVEQ</title>
+
+<h1>MOVEQ</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>Immediate Data --&gt;; Destination
+</p><p>
+</p><p>
+<b>Assembler Syntax:</b> 
+<br>
+<code>  </code>MOVEQ  #&lt;data&gt;, Dn
+</p><p>
+<b>Attributes:</b>  Size = (Long)
+</p><p>
+<b>Description:</b>  Moves a byte of immediate data to a 32-bit 
+<br>
+<code>  </code>data register.  The data in an 8-bit field within the 
+<br>
+<code>  </code>operation word is sign extended to a long operand in 
+<br>
+<code>  </code>the data register as it is transferred.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+\c32200
+<br>
+<code>  </code>X   Not affected.
+<br>
+<code>  </code>N   Set if the result is negative.  Cleared otherwise.
+<br>
+<code>  </code>Z   Set if the result is zero.  Cleared otherwise.
+<br>
+<code>  </code>V   Always cleared.
+<br>
+<code>  </code>C   Always cleared.
+</p><p>
+<b>Example:</b><br>
+<code>
+<br>
+1)<br>
+MOVEQ #$80,D0<br>
+<br>
+Result:<br>
+D0 = $FFFFFF80<br <br="">
+2)<br>
+MOVEQ #$77,D0<br>
+<br>
+Result:<br>
+D0 = $00000077<br <="" body="">
+</code></p></body></html>

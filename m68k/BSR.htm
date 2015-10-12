@@ -1,0 +1,50 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>BSR</title>
+
+<h1>BSR</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>SP-4 --&gt;; SP; PC --&gt;; (SP); PC + d --&gt;; PC
+</p><p>
+</p><p>
+<b>Assembler Syntax:</b>
+<br>
+<code>  </code>BSR  &lt;label&gt;
+</p><p>
+<b>Attributes:</b>  Size = (Byte, Word, Long)
+<br>
+</p><p>
+<b>Description:</b>  Pushes the long word address of the instruction
+<br>
+<code>  </code>immediately following the BSR instruction onto the system
+<br>
+<code>  </code>stack.  The PC contains the address of the instruction plus two.
+<br>
+<code>  </code>Program execution continues at location (PC) + displace-
+<br>
+<code>  </code>ment.  The PC contains the address of the instruction 
+<br>
+<code>  </code>word of the BRA instruction plus two.  The displacement is a 
+<br>
+<code>  </code>twos compliment integer that represents the relative distance 
+<br>
+<code>  </code>in bytes from the current PC to the 16-bit displacement 
+<br>
+<code>  </code>(the word immediately following the instruction) is used.  
+<br>
+<code>  </code>If the 8-bit displacement field in the instruction word is all 
+<br>
+<code>  </code>ones ($FF), the 32-bit displacement (long word immediately 
+<br>
+<code>  </code>following the instruction) is used.  Condition code cc specifies 
+<br>
+<code>  </code>one of the following conditions.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<code>  </code>Not affected.
+</p><p>
+
+</p></body></html>

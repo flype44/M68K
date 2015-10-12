@@ -1,0 +1,59 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>ANDN</title>
+
+<h1>ANDN</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>Source  Destination --&gt;; Destination
+</p><p>
+<b>Assembler Syntax:</b>  
+<br>
+ANDN  &lt;ea&gt;, Dn<br>
+ANDN  &lt;ea&gt;, En<br>
+<br>
+ANDN  Dn, &lt;ea&gt;<br>
+ANDN  En, &lt;ea&gt;<br>
+
+</p><p>
+<b>Attributes:</b>  Size = (Byte, Word, Long)
+</p><p>
+<b>Description:</b>  Performs an AND operation of the INVERTED source 
+<br>
+<code>  </code>operand with the destination operand and stores the result 
+<br>
+<code>  </code>in the destination location.  The size of the operation can 
+<br>
+<code>  </code>be specified as byte, word, or long.  The contents of an 
+<br>
+<code>  </code>address register may not be used as an operand.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Not affected.
+<br>
+<code>  </code>N   Set if the most significant bit of the result is set.  
+<br>
+<code>  </code><code>  </code>Cleared otherwise.
+<br>
+<code>  </code>Z   Set if the result is zero.  Cleared otherwise.
+<br>
+<code>  </code>V   Always cleared.
+<br>
+<code>  </code>C   Always cleared.
+</p><p>
+<b>Example:</b><br>
+<code>
+<br>
+1)<br>
+D1 = $12345678<br>
+D2 = $0000FFF0<br>
+ANDN.L D2,D1<br>
+<br>
+Result:
+D1 = $12340008<br>
+
+
+</code></p></body></html>

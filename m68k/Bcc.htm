@@ -1,0 +1,74 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>Bcc</title>
+
+<h1>Bcc</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>If (condition true) then PC + d --&gt;; PC
+</p><p>
+</p><p>
+<b>Assembler Syntax:</b>
+<br>
+<code>  </code>Bcc  &lt;label&gt;
+</p><p>
+<b>Attributes:</b>  Size = (Byte, Word, Long)
+<br>
+</p><p>
+<b>Description:</b>  If the specified condition is true, program exe-
+<br>
+<code>  </code>cution continues at location (PC) + displacement.  The PC 
+<br>
+<code>  </code>contains the address of the instruction word of the Bcc 
+<br>
+<code>  </code>instruction plus two.  The displacement is a twos compliment 
+<br>
+<code>  </code>integer that represents the relative distance in bytes from the 
+<br>
+<code>  </code>current PC to the 16-bit displacement (the word immediately 
+<br>
+<code>  </code>following the instruction) is used.  If the 8-bit displacement 
+<br>
+<code>  </code>field in the instruction word is all ones ($FF), the 32-bit 
+<br>
+<code>  </code>displacement (long word immediately following the inst-
+<br>
+<code>  </code>ruction) is used.  Condition code cc specifies one of the 
+<br>
+<code>  </code>following conditions.
+</p><p>
+<code>  </code>CC<code>  </code>carry clear<code>  </code><code>  </code>0100<code>  </code>/C
+<br>
+<code>  </code>CS<code>  </code>carry set<code>  </code><code>  </code><code>  </code>0101<code>  </code>C
+<br>
+<code>  </code>EQ<code>  </code>equal<code>  </code><code>  </code><code>  </code>0111<code>  </code>Z
+<br>
+<code>  </code>GE<code>  </code>greater or equal<code>  </code>1100<code>  </code>N ¥ V + /N ¥ /V
+<br>
+<code>  </code>GT<code>  </code>greater than <code>  </code><code>  </code>1110<code>  </code>N ¥ V ¥ /Z + /N ¥ /V ¥ /Z
+<br>
+<code>  </code>HI<code>  </code>high<code>  </code><code>  </code><code>  </code><code>  </code>0010<code>  </code>/C ¥ /Z
+<br>
+<code>  </code>LE<code>  </code>less or equal<code>  </code><code>  </code>1111<code>  </code>Z + N ¥ /V + /N ¥ V
+<br>
+<code>  </code>LS<code>  </code>low or same<code>  </code><code>  </code>0011<code>  </code>C + Z
+<br>
+<code>  </code>LT<code>  </code>less than<code>  </code><code>  </code><code>  </code>1101<code>  </code>N ¥ /V + /N ¥ V
+<br>
+<code>  </code>MI<code>  </code>minus<code>  </code><code>  </code><code>  </code>1011<code>  </code>N
+<br>
+<code>  </code>NE<code>  </code>not equal<code>  </code><code>  </code><code>  </code>0110<code>  </code>/Z
+<br>
+<code>  </code>PL<code>  </code>plus<code>  </code><code>  </code><code>  </code><code>  </code>1010<code>  </code>/N
+<br>
+<code>  </code>VC<code>  </code>overflow clear<code>  </code><code>  </code>1000<code>  </code>/V
+<br>
+<code>  </code>VS<code>  </code>overflow set<code>  </code><code>  </code>1001<code>  </code>V
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<code>  </code>Not affected.
+</p><p>
+
+</p></body></html>

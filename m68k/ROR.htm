@@ -1,0 +1,74 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>ROR</title>
+
+<h1>ROR</h1>
+<p>
+<b>Operation:</b>  Destination Rotated by &lt;count&gt; --&gt;; Destination
+</p><p>
+</p><p>
+<b>Assembler Syntax:</b>
+<br>
+<code>  </code>ROR  Dx, Dy
+<br>
+<code>  </code>ROR  #&lt;data&gt;, Dy
+<br>
+<code>  </code>ROR*  &lt;ea&gt;
+</p><p>
+<b>Attributes:</b>  Size = (Byte, Word, Long)
+<br>
+<code>  </code>* Only word size operation is allowed.
+</p><p>
+<b>Description:</b> Rotates the bits of the operand to the right.  The 
+<br>
+<code>  </code>extend bit is not included in the rotation.  The rotate 
+<br>
+<code>  </code>count for the rotation of a register is specified in either 
+<br>
+<code>  </code>of two ways:
+<br>
+<code>  </code><code>  </code>1.  Immediate -- The rotate count (1-8) is specified 
+<br>
+<code>  </code><code>  </code><code>  </code>in the instruction.
+<br>
+<code>  </code><code>  </code>2.  Register -- The rotate count is the value in the 
+<br>
+<code>  </code><code>  </code><code>  </code>data register specified in the instruction, 
+<br>
+<code>  </code><code>  </code><code>  </code>modulo 64.
+</p><p>
+<code>  </code>The size of the operation for register destinations is 
+<br>
+<code>  </code>specified as byte, word, or long.  The contents of memory, 
+<br>
+<code>  </code>&lt;ea&gt;, can be rotated one bit only, and operand size is 
+<br>
+<code>  </code>restricted to a word.
+</p><p>
+<code>  </code>The ROR instruction rotates the bits of the operand to the 
+<br>
+<code>  </code>right; the rotate count determines the number of bit positions 
+<br>
+<code>  </code>rotated.  Bits rotated out of the low order bit go to the carry 
+<br>
+<code>  </code>bit and also back into the high-order bit.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Not affected.
+<br>
+<code>  </code>N   Set if the most significant bit of the result is set.  
+<br>
+<code>  </code><code>  </code>Cleared otherwise.
+<br>
+<code>  </code>Z   Set if the result is zero.  Cleared otherwise.
+<br>
+<code>  </code>V   Always cleared.
+<br>
+<code>  </code>C   Set according to the last bit rotated out of the operand.  
+<br>
+<code>  </code><code>  </code>Cleared when the rotate count is zero.
+</p><p>
+
+</p></body></html>

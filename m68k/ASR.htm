@@ -1,0 +1,49 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>ASR</title>
+
+<h1>ASR</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>Destination Shifted by &lt;count&gt; --&gt;; Destination
+</p><p>
+</p><p>
+<b>Assembler Syntax:</b>  
+<br>
+<code>  </code>ASR  Dx, Dy
+<br>
+<code>  </code>ASR  #&lt;data&gt;, Dy
+<br>
+<code>  </code>ASR &lt;ea&gt;
+</p><p>
+<b>Attributes:</b>  Size = (Byte, Word, Long)
+</p><p>
+<b>Description:</b>  Arithmetically shifts the bits of the operand to the right.
+<br>
+<code>  </code>The carry bit receives the last bit shifted out of the operand.  The
+<br>
+<code>  </code>shift count for the shifting of a register may be specified in two
+<br>
+<code>  </code>different ways:
+<br>
+<code>  </code><code>  </code>1.  Immediate -- The shift count is specified in the instr-
+<br>
+<code>  </code><code>  </code><code>  </code>uction (shift range 1-8).
+<br>
+<code>  </code><code>  </code>2.  Register -- The shift count is the value in the data reg-
+<br>
+<code>  </code><code>  </code><code>  </code>ister specified in instruction modulo 64.
+</p><p>
+<code>  </code>The size of the operation can be specified as byte, word, or long.  
+<br>
+<code>  </code>An operand in memory can be shifted one bit only, and the operand
+<br>
+<code>  </code>size is restricted to word.
+</p><p>
+<code>  </code>Bits shifted out of the low-order bit go to both the carry and the
+<br>
+<code>  </code>extend bits; the sign bit (MSB) is shifted into the high-order bit.
+</p><p>
+
+</p></body></html>

@@ -1,0 +1,75 @@
+<HTML><BODY>
+<title>ADD</title>
+
+<H1>ADD</H1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>Source + Destination --&gt;; Destination
+<p>
+<code>  </code>ADD  &lt;ea&gt;, Dn<br>
+<code>  </code>ADD  &lt;ea&gt;, En<br>
+<br>
+<code>  </code>ADD  Dn, &lt;ea&gt;<br>
+<code>  </code>ADD  En, &lt;ea&gt;<br>
+<p>
+<b>Attributes:</b>  Size = (Byte, Word, Long)
+<p>
+<b>Description:</b>  Adds the source operand to the destination operand
+<br>
+<code>  </code>using binary addition, and stores the result in the destination
+<br>
+<code>  </code>location.  The size of the operation may be specified as byte, 
+<br>
+<code>  </code>word, or long.
+<p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Set the same as the carry bit.
+<br>
+<code>  </code>N   Set if the result is negative.  Cleared otherwise.
+<br>
+<code>  </code>Z   Set if the result is zero.  Cleared otherwise.
+<br>
+<code>  </code>V   Set if an overflow is generated.  Cleared otherwise.
+<br>
+<code>  </code>C   Set if a carry is generated.  Cleared otherwise.
+<p>
+
+<b>Example:</b><br>
+<code>
+<br>
+1)<br>
+D1 = $11111111<br>
+D2 = $22222222<br>
+ADD.B D1,D2<br>
+<br>
+Result:
+D2 = $11111133<br>
+<p>
+<br>
+2)<br>
+D1 = $11111111<br>
+D2 = $22222222<br>
+ADD.W D1,D2<br>
+<br>
+Result:
+D2 = $11113333<br>
+<p>
+<br>
+3)<br>
+D1 = $11111111<br>
+D2 = $22222222<br>
+ADD.L D1,D2<br>
+<br>
+Result:
+D2 = $33333333<br>
+<p>
+<br>
+</code>
+<br>
+Note:
+Add can use as source also AN.<br>
+Only ADD/SUB/CMP/MOVE can use AN as source.<br>
+</BODY></HTML>

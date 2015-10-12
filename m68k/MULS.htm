@@ -1,0 +1,70 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>MULS</title>
+
+<h1>MULS</h1>
+<p>
+<b>Operation:</b>  Source * Destination --&gt;; Destination
+</p><p>
+<b>Assembler Syntax:</b> 
+<br>
+<code>  </code>MULS.W  &lt;ea&gt;, Dn<code>  </code><code>  </code>16 x 16 --&gt;; 32
+<br>
+<code>  </code>MULS.L  &lt;ea&gt;, Dl<code>  </code><code>  </code>32 x 32 --&gt;; 32
+<br>
+<code>  </code>MULS.L  &lt;ea&gt;, Dh:Dl<code>  </code>32 x 32 --&gt;; 64
+<br>
+</p><p>
+<b>Attributes:</b>  Size = (Word, Long)
+</p><p>
+<b>Description:</b> Multiplies two signed operands yielding a signed 
+<br>
+<code>  </code>result.  This instruction has a word operand form and a 
+<br>
+<code>  </code>long-word operand form.
+</p><p>
+<code>  </code>In the word form, the multiplier and multiplicand are 
+<br>
+<code>  </code>both word operands, and the result is a long-word operand.  
+<br>
+<code>  </code>A register operand is the low-order word; the upper word 
+<br>
+<code>  </code>of the register is ignored.  All 32 bits of the product are 
+<br>
+<code>  </code>saved in the destination data register.
+</p><p>
+<code>  </code>In the long form, the multiplier and multiplicand are both 
+<br>
+<code>  </code>long-word operands, and the result is either a long word or 
+<br>
+<code>  </code>a quad word.  The long-word result is the low-order 32 
+<br>
+<code>  </code>bits of the quad word result; the high-order 32 bits of the 
+<br>
+<code>  </code>product are discarded.
+<br>
+<code>  </code>
+<br>
+<b>Condition Codes:</b>  
+<br>
+<br>
+<code>  </code>X   Not affected.
+<br>
+<code>  </code>N   Set if the result is negative. Cleared otherwise.
+<br>
+<code>  </code>Z   Set if the result is zero. Cleared otherwise.
+<br>
+<code>  </code>V   Set if overflow.  Cleared otherwise.
+<br>
+<code>  </code>C   Always cleared.
+</p><p>
+Note: Overflow (V = 1) can occur only when multiplying 32-bit 
+<br>
+<code>  </code>operands to yield a 32-bit result.  Overflow occurs if the 
+<br>
+<code>  </code>high-order 32 bits of the quad-word product are not the 
+<br>
+<code>  </code>sign extension of the low-order 32 bits.
+</p><p>
+
+</p></body></html>

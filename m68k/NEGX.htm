@@ -1,0 +1,46 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>NEGX</title>
+
+<h1>NEGX</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>0 - (Destination) - X --&gt;; Destination
+</p><p>
+<b>Assembler Syntax:</b> 
+<br>
+<code>  </code>NEGX  &lt;ea&gt;
+</p><p>
+<b>Attributes:</b>  Size = (Byte, Word, Long)
+</p><p>
+<b>Description:</b>  Subtracts the destination operand and the extend
+<br>
+<code>  </code>bit from zero and stores the result in the destination location.  
+<br>
+<code>  </code>The size of the operation is specified as byte, word, or long.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Set the same as the carry bit.
+<br>
+<code>  </code>N   Set if the result is negative.  Cleared otherwise.
+<br>
+<code>  </code>Z   Set if the result is zero.  Cleared otherwise.
+<br>
+<code>  </code>V   Set if an overflow occurs.  Cleared otherwise.
+<br>
+<code>  </code>C   Cleared if the result is zero.  Set otherwise.
+</p><p>
+Note: Normally the Z condition code bit is set via programming 
+<br>
+<code>  </code>before the start of the operation.  This allows successful 
+<br>
+<code>  </code>tests for zero results upon completion of multiple 
+<br>
+<code>  </code>precision operations.
+</p><p>
+NEGX can be used to negate numbers longer than 32bit<br>
+
+</p></body></html>

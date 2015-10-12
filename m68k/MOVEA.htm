@@ -1,0 +1,47 @@
+<HTML><BODY>
+<title>MOVEA</title>
+
+<H1>MOVEA</H1>
+<p>
+<b>Operation:</b>  Source --&gt;; Destination
+<p>
+<b>Assembler Syntax:</b>  MOVEA &lt;ea&gt;, AN
+<p>
+<b>Attributes:</b>  Size = (Word, Long)
+<p>
+<b>Description:</b> Moves the data at the source to the destination
+<br>
+<code>  </code>location, and sets the condition codes according to the data. 
+<br>
+<code>  </code>The size of the operation may be specified as byte, 
+<br>
+<code>  </code>word, or long.
+<p>
+<b>Condition Codes:</b>  
+<br>
+Not affected.
+<p>
+<b>Example:</b><br>
+<code>
+<br>
+1)<br>
+A0= $00008000<br>
+A1= $00044444<br>
+<br>
+MOVE.L A0,A1
+<br>
+Result:<br>
+A1 = $00008000<br>
+<br>
+<p>
+<br>
+2)<br>
+A0= $00008000<br>
+A1= $00044444<br>
+<br>
+MOVE.W A0,A1        ; Mind .W gets sign extended to 32bit
+<br>
+Result:<br>
+A1 = $FFFF8000<br>
+<br>
+</BODY></HTML>

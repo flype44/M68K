@@ -1,0 +1,72 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>ASL</title>
+
+<h1>ASL</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>Destination Shifted by &lt;count&gt; --&gt;; Destination
+</p><p>
+</p><p>
+<b>Assembler Syntax:</b>  
+<br>
+<code>  </code>ASL  Dx, Dy
+<br>
+<code>  </code>ASL  #&lt;data&gt;, Dy
+<br>
+<code>  </code>ASL &lt;ea&gt;
+</p><p>
+<b>Attributes:</b>  Size = (Byte, Word, Long)
+</p><p>
+<b>Description:</b>  Arithmetically shifts the bits of the operand to the left.
+<br>
+<code>  </code>The carry bit receives the last bit shifted out of the operand.  The
+<br>
+<code>  </code>shift count for the shifting of a register may be specified in two
+<br>
+<code>  </code>different ways:
+<br>
+<code>  </code><code>  </code>1.  Immediate -- The shift count is specified in the instr-
+<br>
+<code>  </code><code>  </code><code>  </code>uction (shift range 1-8).
+<br>
+<code>  </code><code>  </code>2.  Register -- The shift count is the value in the data reg-
+<br>
+<code>  </code><code>  </code><code>  </code>ister specified in instruction modulo 64.
+</p><p>
+<code>  </code>The size of the operation can be specified as byte, word, or long.  
+<br>
+<code>  </code>An operand in memory can be shifted one bit only, and the operand
+<br>
+<code>  </code>size is restricted to word.
+</p><p>
+<code>  </code>Bits shifted out of the high-order bit go to both the carry and the
+<br>
+<code>  </code>extend bits; zeros are shifted into the low-order bit.  The over-
+<br>
+<code>  </code>flow bit indicates if any sign changes occur during the shift.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Set according to the last bit shifted out of the operand.
+<br>
+<code>  </code><code>  </code>Unaffected for a shift count of zero.
+<br>
+<code>  </code>N   Set if the most significant bit of the result is set.  
+<br>
+<code>  </code><code>  </code>Cleared otherwise.
+<br>
+<code>  </code>Z   Set if the result is zero.  Cleared otherwise.
+<br>
+<code>  </code>V   Set if the most significant bit is changed at any time during
+<br>
+<code>  </code><code>  </code>the shift operation.  Cleared otherwise.
+<br>
+<code>  </code>C   Set according to the last bit shifted out of the operand.
+<br>
+<code>  </code><code>  </code>Unaffected for a shift count of zero.
+</p><p>
+
+</p></body></html>

@@ -1,0 +1,57 @@
+<HTML><BODY>
+<title>CMP</title>
+
+<H1>CMP</H1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>Destination - Source --&gt;; cc
+<p>
+<b>Assembler Syntax:</b>  
+<br>
+CMP  &lt;ea&gt;, Dn<br>
+CMP  &lt;ea&gt;, En<br>
+<p>
+<b>Attributes:</b>  Size = (Byte, Word, Long)
+<p>
+<b>Description:</b>  Subtracts the source operand from the destination
+<br>
+<code>  </code>data register and sets the condition codes according to the
+<br>
+<code>  </code>result; the data register is not changed.  The size of the operation
+<br>
+<code>  </code>can be byte, word, or long.
+<p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Not affected.
+<br>
+<code>  </code>N   Set if the result is negative.  Cleared otherwise.
+<br>
+<code>  </code>Z   Set if the result is zero.  Cleared otherwise.
+<br>
+<code>  </code>V   Set if an overflow occurs.  Cleared otherwise.
+<br>
+<code>  </code>C   Set if a borrow occurs.  Cleared otherwise.
+<p>
+<PRE>
+CMP A,B         signed          unsigned
+-------         ------          --------
+B &lt;; A           BLT             BLO (or BCS)
+B &lt;;= A          BLE             BLS
+B = A           BEQ             BEQ
+B &lt;;&gt;; A          BNE             BNE
+B &gt;; A           BGT             BHI
+B &gt;;= A          BGE             BHS (or BCC)
+
+TST A            signed          unsigned
+-------          ------          --------
+A &lt;;  0           BLT (or BMI)    NOP
+A &lt;;= 0           BLE             BZ (or BEQ)
+A =  0           BZ (or BEQ)     BZ (or BEQ)
+A &lt;;&gt;; 0           BNZ (or BNE)    BNZ (or BNE)
+A &gt;;  0           BGT             BNZ (or BNE)
+A &gt;;= 0           BGE (or BPL)    BRA
+</PRE>
+</BODY></HTML>

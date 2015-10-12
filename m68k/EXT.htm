@@ -1,0 +1,48 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>EXT</title>
+
+<h1>EXT</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>Destination Sign-Extended --&gt;; Destination
+</p><p>
+</p><p>
+<b>Assembler Syntax:</b>  
+<br>
+<code>  </code>EXT.W  Dn<code>  </code>extends byte to word
+<br>
+<code>  </code>EXT.L  Dn<code>  </code><code>  </code>extends word to long word
+</p><p>
+<b>Attributes:</b>  Size = (Word, Long)
+</p><p>
+<b>Description:</b>  Extends a byte in a data register to a word or a 
+<br>
+<code>  </code>word in a data register to a long word, by replicating the 
+<br>
+<code>  </code>sign bit to the left.  If the operation extends a byte to a word, 
+<br>
+<code>  </code>bit [7] of the designated data register is copied to bits [15:8] 
+<br>
+<code>  </code>of that data register.  If the operation exntends a word to a 
+<br>
+<code>  </code>long word, bit [15] of the designated data register is copied 
+<br>
+<code>  </code>to bits [31:16] of the data register.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Not affected.
+<br>
+<code>  </code>N   Set if the result is negative.  Cleared otherwise.
+<br>
+<code>  </code>Z   Set if the result is zero.  Cleared otherwise.
+<br>
+<code>  </code>V   Always cleared.
+<br>
+<code>  </code>C   Always cleared.
+</p><p>
+
+</p></body></html>

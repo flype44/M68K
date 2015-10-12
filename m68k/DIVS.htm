@@ -1,0 +1,81 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>DIVS</title>
+
+<h1>DIVS</h1>
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>Destination / Source --&gt;; Destination
+</p><p>
+</p><p>
+<b>Assembler Syntax:</b>  
+<br>
+<code>  </code>DIVS.W  &lt;ea&gt;, Dn<code>  </code><code>  </code>32/16 --&gt;; 16r:16q
+<br>
+<code>  </code>DIVS.L  &lt;ea&gt;, Dq<code>  </code><code>  </code>32/32 --&gt;; 32q
+<br>
+<code>  </code>DIVS.L  &lt;ea&gt;, Dr:Dq<code>  </code>64/32 --&gt;; 32r:32q
+<br>
+</p><p>
+<b>Attributes:</b>  Size = (Word, Long)
+</p><p>
+<b>Description:</b>  Divides the signed destination operand by the 
+<br>
+<code>  </code>signed source operand and stores the signed result in the 
+<br>
+<code>  </code>destination.  The instruction uses one of three forms.  The 
+<br>
+<code>  </code>word form of the instruction divides a long word by a word.  
+<br>
+<code>  </code>The result is a quotient in the lower word (least significant 
+<br>
+<code>  </code>16 bits) and the remainder is in the upper word (most 
+<br>
+<code>  </code>significant 16 bits) of the resul.  The sign of the remainder 
+<br>
+<code>  </code>is the same as the sign of the dividend.
+</p><p>
+<code>  </code>The first long form divides a long word by a long word.  The 
+<br>
+<code>  </code>result is a long quotient; the remainder is discarded.
+</p><p>
+<code>  </code>The second long form divides a quad word (in any two data 
+<br>
+<code>  </code>registers) by a long word.  The result is a long-word quotient 
+<br>
+<code>  </code>and a long-word remainder.
+</p><p>
+<code>  </code>Two special condition may arise during the operation:
+<br>
+<code>  </code><code>  </code>1.  Division by zero causes a trap.
+<br>
+<code>  </code><code>  </code>2.  Overflow may be detected and set before the inst-
+<br>
+<code>  </code><code>  </code><code>  </code>ruction completes.  If the instruction detects 
+<br>
+<code>  </code><code>  </code><code>  </code>an overflow, it sets the overflow condition code 
+<br>
+<code>  </code><code>  </code><code>  </code>and the operands are unaffected.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Not affected.
+<br>
+<code>  </code>N   Set if the quotient is negative. Cleared otherwise.
+<br>
+<code>  </code><code>  </code>Undefined if overflow or divide by zero occurs.
+<br>
+<code>  </code>Z   Set if the quotient is zero.  Cleared otherwise.
+<br>
+<code>  </code><code>  </code>Undefined if overflow or divide by zero occurs.
+<br>
+<code>  </code>V    Set if the division overflow occurs; undefined if
+<br>
+<code>  </code><code>  </code>divide by zero occurs.  Cleared otherwise.
+<br>
+<code>  </code>C   Always cleared.
+</p><p>
+
+</p></body></html>

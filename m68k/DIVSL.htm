@@ -1,0 +1,60 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<title>DIVSL</title>
+
+<h1>DIVSL</h1> / TDIVS
+<p>
+<b>Operation:</b>  
+<br>
+<code>  </code>Destination / Source --&gt;; Destination
+</p><p>
+</p><p>
+<b>Assembler Syntax:</b>  
+<br>
+<code>  </code>DIVSL.L  &lt;ea&gt;, Dr:Dq<code>  </code>32/32 --&gt;; 32r:32q
+</p><p>
+<b>Attributes:</b>  Size = (Long)
+</p><p>
+<b>Description:</b>  Divides the signed destination operand by the 
+<br>
+<code>  </code>signed source operand and stores the signed result in the 
+<br>
+<code>  </code>destination. 
+</p><p>
+<code>  </code>This instruction divides a long word by a long word.  The 
+<br>
+<code>  </code>result is a long-word quotient and a long-word remainder.
+</p><p>
+<code>  </code>Two special condition may arise during the operation:
+<br>
+<code>  </code><code>  </code>1.  Division by zero causes a trap.
+<br>
+<code>  </code><code>  </code>2.  Overflow may be detected and set before the inst-
+<br>
+<code>  </code><code>  </code><code>  </code>ruction completes.  If the instruction detects 
+<br>
+<code>  </code><code>  </code><code>  </code>an overflow, it sets the overflow condition 
+<br>
+<code>  </code><code>  </code><code>  </code>code and the operands are unaffected.
+</p><p>
+<b>Condition Codes:</b>
+<br>
+<br>
+<code>  </code>X   Not affected.
+<br>
+<code>  </code>N   Set if the quotient is negative. Cleared otherwise.
+<br>
+<code>  </code><code>  </code>Undefined if overflow or divide by zero occurs.
+<br>
+<code>  </code>Z   Set if the quotient is zero.  Cleared otherwise.
+<br>
+<code>  </code><code>  </code>Undefined if overflow or divide by zero occurs.
+<br>
+<code>  </code>V    Set if the division overflow occurs; undefined if
+<br>
+<code>  </code><code>  </code>divide by zero occurs.  Cleared otherwise.
+<br>
+<code>  </code>C   Always cleared.
+</p><p>
+
+</p></body></html>
