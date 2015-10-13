@@ -12,13 +12,15 @@ ASSERT_ZERO EQU $00D0000C ; assert register
 ; HEAD
 ;--------------------------------------------------------------------------------
 
-    section .fastram
-
     bra     start ; comment this for sim
-
-    dc.l    0
+    
+    section .chipram
+    
+    dc.l    $5000000
     dc.l    start
-
+    
+    section .fastram
+    
 ;--------------------------------------------------------------------------------
 ; DATA
 ;--------------------------------------------------------------------------------
@@ -103,6 +105,7 @@ start:
     bra     .loop          ; continue
 .exit:
     move.l  d7,ASSERT_ZERO ; assert error counter = 0
+    tst.b   $0             ; flush pipelines
     stop    #-1            ; stop sim
     rts                    ; stop program
 
