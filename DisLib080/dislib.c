@@ -11,7 +11,6 @@
  * EFFECTIVE ADDRESS ==> #imm 16 or 32 (propagate size)
  * EFFECTIVE ADDRESS ==> Resolve PC Relative address
  * DECODE_LABEL()    ==> Resolve Correct Relative address
- * DIVxL             ==> Implements
  ************************************************************************************
  * Useful links
  * http://www.apollo-core.com/bringup/decoder_cpu.ods
@@ -967,20 +966,24 @@ APTR DECODE_020_CMP2(APTR p, UINT16 op, UINT16 ex, int size) {
 	OUT("CMP2.%c  %s,%c%i", SZ[size], ea, DA[BIT(ex, 15)], DOWNTO(ex, 14, 12));
 	return p;
 }
-APTR DECODE_020_DIV(APTR p, UINT16 op) { // TODO: DIVxL <ea>,Dr:Dq
+APTR DECODE_020_DIV(APTR p, UINT16 op) {
 	// DIVU.L  <ea>,Dq     32/16 => 32q
 	// DIVU.L  <ea>,Dr:Dq  64/32 => 32r-32q
-	// DIVUL.L <ea>,Dr:Dq  32/32 => 32r-32q    ==>   TODO: Implement
+	// DIVUL.L <ea>,Dr:Dq  32/32 => 32r-32q
 	// DIVS.L  <ea>,Dq     32/32 => 32q
 	// DIVS.L  <ea>,Dr:Dq  64/32 => 32r-32q
-	// DIVSL.L <ea>,Dr:Dq  32/32 => 32r-32q    ==>   TODO: Implement
-	UINT16 ex;
+	// DIVSL.L <ea>,Dr:Dq  32/32 => 32r-32q
+	UINT16 ex, dq, dr;
 	p = READWORD(p, &ex);
 	p = DECODE_EA(p, op);
-	OUT("DIV%s.L  %s,", BIT(ex, 11) ? "S" : "U", ea);
-	if (BIT(ex, 10))
-		OUT("d%i:", DOWNTO(ex, 14, 12));
-	OUT("d%i", DOWNTO(ex, 2, 0));
+	dr = DOWNTO(ex, 2, 0);
+	dq = DOWNTO(ex, 14, 12);
+	OUT("DIV%s%s %s,d%i", 
+		BIT(ex, 11) ? "S" : "U",
+		BIT(ex, 10) ? ".l " : "L.l", 
+		ea, dr);
+	if (dq != dr)
+		OUT(":d%i", dq);
 	return p;
 }
 APTR DECODE_020_EXTB(APTR p, UINT16 op) {
@@ -1863,6 +1866,11 @@ int main(int argc, char *argv[]) {
 	UINT16 sample[100] = {
 		0x4cdf,0x7cfc,
 		0x3228,0x001c,
+		
+		0x4c40,0x1001, // DIVU.L  d0,d1
+		0x4c40,0x2401, // DIVU.L  d0,d1:d2
+		0x4c40,0x2001, // DIVUL.L d0,d1:d2
+		
 		0x690f,
 		0x69f0,
 		0xe000,
