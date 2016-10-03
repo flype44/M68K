@@ -3,30 +3,42 @@
  * Short:   A simple 68080 Disassembler
  * Authors: APOLLO-Team, flype
  * Update:  Oct-2016
- ***********************************************************************************/
-
-/* TODO:
- * OUTPUTS           ==> ALL lowercase
+ * Compile: gcc dislib.c -o dislib
+ ************************************************************************************
  * OUTPUTS           ==> Push chars to a own buffer
+ * OUTPUTS           ==> Illegal instructions
  * EFFECTIVE ADDRESS ==> Correct commas positioning
  * EFFECTIVE ADDRESS ==> #imm 16 or 32 (propagate size)
- * EFFECTIVE ADDRESS ==> %x instead of %0nx
  * EFFECTIVE ADDRESS ==> Resolve PC Relative address
  * DECODE_LABEL()    ==> Resolve Correct Relative address
  * DIVxL             ==> Implements
- * PACK, UNPK        ==> Implements
- */
+ ************************************************************************************
+ * Useful links
+ * http://www.apollo-core.com/bringup/decoder_cpu.ods
+ * https://www.tutorialspoint.com/c_standard_library/stdarg_h.htm
+ * https://www.tutorialspoint.com/c_standard_library/stdio_h.htm
+ * https://www.tutorialspoint.com/c_standard_library/stdlib_h.htm
+ * https://www.tutorialspoint.com/c_standard_library/string_h.htm
+ ***********************************************************************************/
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 #include "dislib.h"
 
 /************************************************************************************
  * ARRAYS
  ***********************************************************************************/
 
-char cr  [ 16]; // Control-Register
-char ea  [200]; // Effective-Address
+char buf[200];
+char* buff = &buf[0];
+
+int wordcount = 0;
+
+char cr[ 16]; // Control-Register
+char ea[100]; // Effective-Address
+char dump[50]; // Opcodes-HexDump
 
 char AB[2] = { 'a', 'b' };
 char DA[2] = { 'd', 'a' };
@@ -39,11 +51,35 @@ char* CC[16] = { "T ", "F ", "HI", "LS", "CC", "CS", "NE", "EQ",
                  "VC", "VS", "PL", "MI", "GE", "LT", "GT", "LE" };
 
 /************************************************************************************
- * DECODE - EFFECTIVE ADDRESS MODES
+ * DECODE - UTILS
  ***********************************************************************************/
 
+void OUT(const char *fmt, ...)
+{
+	va_list argv;
+	va_start(argv, fmt);
+	buff += vsprintf(buff, fmt, argv);
+	va_end(argv);
+	return;
+}
+
+APTR READWORD(APTR p, APTR op) {
+	*op = *p++;
+	sprintf(dump + (5 * wordcount), "%04x ", *op);
+	wordcount++;
+	return p;
+}
+APTR READLONG(APTR p, APTR ex) {
+	UINT16 h = *p++;
+	UINT16 l = *p++;
+	*ex = h << 16 | l;
+	sprintf(dump + (wordcount*5), "%04x %04x", h, l);
+	wordcount += 2;
+	return p;
+}
+
 void DECODE_CREG(int reg) {
-	sprintf(ea, "");
+	sprintf(cr, "");
 	switch (reg) {
 		case 0x000: sprintf(cr, "SFC"        ); break;
 		case 0x001: sprintf(cr, "DFC"        ); break;
@@ -71,7 +107,7 @@ void DECODE_LIST(UINT16 op, UINT16 ex) {
 	int i = 0;
 	
 	if (!ex) {
-		printf("#0"); // No Register
+		OUT("#0"); // No Register
 		return;
 	}
 	
@@ -79,20 +115,20 @@ void DECODE_LIST(UINT16 op, UINT16 ex) {
 	{
 		while(ex) {
 			if (ex & 0x8000) {
-				if (i < 8) printf("d");
-				else printf("a");
-				printf("%i", i & 7);
+				if (i < 8) OUT("d");
+				else OUT("a");
+				OUT("%i", i & 7);
 				if ((ex & 0x4000) && (i & 7) < 7) {
-					printf("-");
+					OUT("-");
 					while ((ex & 0x4000) && (i & 7) < 7) {
 						ex <<= 1;
 						i++;
 					}
-					if (i < 8) printf("d");
-					else printf("a");
-					printf("%i", i & 7);
+					if (i < 8) OUT("d");
+					else OUT("a");
+					OUT("%i", i & 7);
 				}
-				if ((UINT16)(ex << 1)) printf("/");
+				if ((UINT16)(ex << 1)) OUT("/");
 			}
 			i++;
 			ex <<= 1;
@@ -102,20 +138,20 @@ void DECODE_LIST(UINT16 op, UINT16 ex) {
 	{
 		while(ex || i < 16) {
 			if (ex & 0x0001) {
-				if (i < 8) printf("d");
-				else printf("a");
-				printf("%i", i & 7);
+				if (i < 8) OUT("d");
+				else OUT("a");
+				OUT("%i", i & 7);
 				if ((ex & 0x0002) && (i & 7) < 7) {
-					printf("-");
+					OUT("-");
 					while((ex & 0x0002) && (i & 7) < 7) {
 						ex >>= 1;
 						i++;
 					}
-					if (i < 8) printf("d");
-					else printf("a");
-					printf("%i", i & 7);
+					if (i < 8) OUT("d");
+					else OUT("a");
+					OUT("%i", i & 7);
 				}
-				if (ex >> 1) printf("/");
+				if (ex >> 1) OUT("/");
 			}
 			i++;
 			ex >>= 1;
@@ -131,7 +167,7 @@ APTR DECODE_EA_EXT(APTR p, UINT16 mode, UINT16 reg, int breg) {
 	char od[1+8+2+1];
 	if (mode == 7) sprintf(an, "PC");
 	else sprintf(an, "%c%i", AB[breg], reg);
-	ex = *p++;
+	p = READWORD(p, &ex);
 	sprintf(xn, "%c%i.%c*%c",
 		DA[BIT   (ex, 15    )],
 		   DOWNTO(ex, 14, 12), 
@@ -141,11 +177,12 @@ APTR DECODE_EA_EXT(APTR p, UINT16 mode, UINT16 reg, int breg) {
 	if (BIT(ex, 8)) {
 		switch (DOWNTO(ex, 5, 4)) {
 			case 3:
-				h = *p++; l = *p++;
+				p = READWORD(p, &h);
+				p = READWORD(p, &l);
 				sprintf(bd, "$%08x.l", h << 16 | l);
 				break;
 			case 2:
-				l = *p++;
+				p = READWORD(p, &l);
 				sprintf(bd, "$%04x.w", l);
 				break;
 			case 1:
@@ -155,12 +192,13 @@ APTR DECODE_EA_EXT(APTR p, UINT16 mode, UINT16 reg, int breg) {
 		switch (iis) {
 			case 3:
 			case 7:
-				h = *p++; l = *p++;
+				p = READWORD(p, &h);
+				p = READWORD(p, &l);
 				sprintf(od, ",$%08x.l", h << 16 | l);
 				break;
 			case 2:
 			case 6:
-				l = *p++;
+				p = READWORD(p, &l);
 				sprintf(od, ",$%04x.w", l);
 				break;
 			default:
@@ -168,10 +206,10 @@ APTR DECODE_EA_EXT(APTR p, UINT16 mode, UINT16 reg, int breg) {
 				break;
 		}
 		sprintf(ea, "(%s%s%s%s%s%s%s)",
-			( iis > 0    ) ? "[" : "", bd,                        
-			( BIT(ex, 5) ) ? ""  : an, 
-			( iis > 4    ) ? "]" : "", 
-			( BIT(ex, 6) ) ? ""  : xn, 
+			( iis > 0    ) ? "[" : "", bd,
+			( BIT(ex, 5) ) ? ""  : an,
+			( iis > 4    ) ? "]" : "",
+			( BIT(ex, 6) ) ? ""  : xn,
 			( iis > 4    ) ? ""  : "]", od);
 	}
 	else {
@@ -189,7 +227,7 @@ APTR DECODE_EA2(APTR p, UINT16 mode, UINT16 reg, int breg, int size) {
 		case 3: sprintf(ea, "(%c%i)+", AB[breg], reg); break;
 		case 4: sprintf(ea, "-(%c%i)", AB[breg], reg); break;
 		case 5:
-			l = *p++;
+			p = READWORD(p, &l);
 			sprintf(ea, "$%x(%c%i)", l, AB[breg], reg);
 			break;
 		case 6:
@@ -198,32 +236,45 @@ APTR DECODE_EA2(APTR p, UINT16 mode, UINT16 reg, int breg, int size) {
 		case 7:
 			switch (reg) {
 				case 0:
-					l = *p++;
+					p = READWORD(p, &l);
 					sprintf(ea, "$%04x.w", l);
 					break;
 				case 1:
-					h = *p++; l = *p++;
+					p = READWORD(p, &h);
+					p = READWORD(p, &l);
 					sprintf(ea, "$%08x.l", h << 16 | l);
 					break;
 				case 2:
-					l = *p++;
-					sprintf(ea, "$%x(pc)", l);
+					p = READWORD(p, &l);
+					sprintf(ea, "$%x(pc)", ((int)p) - 2 + ((short)l));
 					break;
 				case 3:
 					p = DECODE_EA_EXT(p, mode, reg, breg);
 					break;
 				case 4:
 					switch (size) {
-						case 0: h = *p++; sprintf(ea, "#$%02x", (UINT8)h); break;
-						case 1: h = *p++; sprintf(ea, "#$%04x", h); break;
-						case 2: h = *p++; l = *p++; sprintf(ea, "#$%08x", h << 16 | l); break;
-						case 3: break;
+						case 0:
+							p = READWORD(p, &h);
+							sprintf(ea, "#$%02x", (UINT8)h);
+							break;
+						case 1:
+							p = READWORD(p, &h);
+							sprintf(ea, "#$%04x", h);
+							break;
+						case 2:
+							p = READWORD(p, &h);
+							p = READWORD(p, &l);
+							sprintf(ea, "#$%08x", h << 16 | l);
+							break;
+						case 3:
+							sprintf(ea, "<?>");
+							break;
 					}
 					break;
 				case 5:
 				case 6:
 				case 7:
-					sprintf(ea, "ILLEGAL_EA");
+					sprintf(ea, "<?>");
 					break;
 			}
 			break;
@@ -239,21 +290,24 @@ APTR DECODE_EA(APTR p, UINT16 op) {
 
 APTR DECODE_IM_EA(APTR p, UINT16 op, int size) {
 	// INSTRUCTION #<data>,<ea>
-	UINT16 l, h = *p++;
-	p = DECODE_EA(p, op);
+	UINT16 l, h;
 	switch (size) {
 		case 0: // Byte
-			printf("#$%02x", (UINT8)h);
+			p = READWORD(p, &h);
+			OUT("#$%02x", (UINT8)h);
 			break;
 		case 1: // Word
-			printf("#$%04x", h);
+			p = READWORD(p, &h);
+			OUT("#$%04x", h);
 			break;
 		case 2: // Long
-			l = *p++;
-			printf("#$%08x", h << 16 | l);
+			p = READWORD(p, &h);
+			p = READWORD(p, &l);
+			OUT("#$%08x", h << 16 | l);
 			break;
 	}
-	printf(",%s\n", ea);
+	p = DECODE_EA(p, op);
+	OUT(",%s", ea);
 	return p;
 }
 APTR DECODE_RN_EA(APTR p, UINT16 op, UINT16 ex) {
@@ -261,9 +315,9 @@ APTR DECODE_RN_EA(APTR p, UINT16 op, UINT16 ex) {
 	// INSTRUCTION Rn,<ea>
 	p = DECODE_EA1(p, op, BIT(op, 8), 0);
 	if (BIT(ex, 11)) // Direction
-		printf("%c%i,%s\n", BIT(op, 7) ? 'b' : DA[BIT(ex, 15)], DOWNTO(ex, 14, 12), ea);
+		OUT("%c%i,%s", BIT(op, 7) ? 'b' : DA[BIT(ex, 15)], DOWNTO(ex, 14, 12), ea);
 	else
-		printf("%s,%c%i\n", ea, BIT(op, 7) ? 'b' : DA[BIT(ex, 15)], DOWNTO(ex, 14, 12));
+		OUT("%s,%c%i", ea, BIT(op, 7) ? 'b' : DA[BIT(ex, 15)], DOWNTO(ex, 14, 12));
 	return p;
 }
 APTR DECODE_DN_EA(APTR p, UINT16 op, int dir) {
@@ -271,36 +325,36 @@ APTR DECODE_DN_EA(APTR p, UINT16 op, int dir) {
 	// INSTRUCTION Dn,<ea>
 	p = DECODE_EA(p, op);
 	if (dir)
-		printf("d%i,%s\n", DOWNTO(op, 11, 9), ea);
+		OUT("d%i,%s", DOWNTO(op, 11, 9), ea);
 	else
-		printf("%s,d%i\n", ea, DOWNTO(op, 11, 9));
+		OUT("%s,d%i", ea, DOWNTO(op, 11, 9));
 	return p;
 }
 
 APTR DECODE_LABEL(APTR p, UINT16 op, int size) { // FIXME: Resolve correct relative address
 	// <label>
-	UINT16 l, h;
+	UINT16 lo, hi;
 	switch (size) {
 		case 0:
-			printf("$%x\n", (p + (DOWNTO(op, 7, 0) >> 1)));
+			OUT("$%x", ((int)p) - 0 + ((char)(DOWNTO(op, 7, 0))));
 			break;
 		case 1:
-			h = *p++;
-			printf("$%x\n", (((long)p) + ((short)h)) - 2);
+			p = READWORD(p, &hi);
+			OUT("$%x", ((int)p) - 2 + ((short)hi));
 			break;
 		case 2:
-			h = *p++;
-			l = *p++;
-			printf("$%x\n", (((long)p) + ((long)(h << 16) | l)) - 4);
+			p = READWORD(p, &hi);
+			p = READWORD(p, &lo);
+			OUT("$%x", ((int)p) - 4 + ((int)((hi << 16) | lo)));
 			break;
 	}
 	return p;
 }
 APTR DECODE_BRANCH(APTR p, UINT16 op) {
 	switch (DOWNTO(op, 7, 0)) {
-		case 0x00: printf(".w   "); return DECODE_LABEL(p, op, 1);
-		case 0xff: printf(".l   "); return DECODE_LABEL(p, op, 2);
-		default:   printf(".s   "); return DECODE_LABEL(p, op, 0);
+		case 0x00: OUT(".w   "); return DECODE_LABEL(p, op, 1);
+		case 0xff: OUT(".l   "); return DECODE_LABEL(p, op, 2);
+		default:   OUT(".s   "); return DECODE_LABEL(p, op, 0);
 	}
 }
 
@@ -311,22 +365,22 @@ APTR DECODE_BRANCH(APTR p, UINT16 op) {
 APTR DECODE_000_ABCD(APTR p, UINT16 op) {
 	// ABCD Dx,Dy
 	// ABCD -(Ax),-(Ay)
-	printf("ABCD    ");
-	printf(BIT(op, 3) ? "-(a%i),-(a%i)\n" : "d%i,d%i\n", 
+	OUT("ABCD    ");
+	OUT(BIT(op, 3) ? "-(a%i),-(a%i)" : "d%i,d%i", 
 		DOWNTO(op, 2, 0), DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_NBCD(APTR p, UINT16 op) {
 	// NBCD <ea>
 	p = DECODE_EA(p, op);
-	printf("NBCD    %s\n", ea);
+	OUT("NBCD    %s", ea);
 	return p;
 }
 APTR DECODE_000_SBCD(APTR p, UINT16 op) {
 	// SBCD Dx,Dy
 	// SBCD -(Ax),-(Ay)
-	printf("SBCD    ");
-	printf(BIT(op, 3) ? "-(a%i),-(a%i)\n" : "d%i,d%i\n", 
+	OUT("SBCD    ");
+	OUT(BIT(op, 3) ? "-(a%i),-(a%i)" : "d%i,d%i", 
 		DOWNTO(op, 2, 0), DOWNTO(op, 11, 9));
 	return p;
 }
@@ -334,372 +388,381 @@ APTR DECODE_000_SBCD(APTR p, UINT16 op) {
 APTR DECODE_000_ADD(APTR p, UINT16 op, int size, int dir) {
 	// ADD <ea>,Dn
 	// ADD Dn,<ea>
-	printf("ADD.%c   ", SZ[size]);
+	OUT("ADD.%c   ", SZ[size]);
 	return DECODE_DN_EA(p, op, dir);
 }
 APTR DECODE_000_ADDA(APTR p, UINT16 op, int size) {
 	// ADDA <ea>,An
 	p = DECODE_EA(p, op);
-	printf("ADDA.%c  %s,a%i\n", SZ[size], ea, DOWNTO(op, 11, 9));
+	OUT("ADDA.%c  %s,a%i", SZ[size], ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_ADDI(APTR p, UINT16 op, int size) {
 	// ADDI #<data>,<ea>
-	printf("ADDI.%c  ", SZ[size]);
+	OUT("ADDI.%c  ", SZ[size]);
 	return DECODE_IM_EA(p, op, size);
 }
 APTR DECODE_000_ADDQ(APTR p, UINT16 op, int size) {
 	// ADDQ #<data>,<ea>
 	int data = DOWNTO(op, 11, 9);
 	p = DECODE_EA(p, op);
-	printf("ADDQ.%c  #$%x,%s\n", SZ[size], data == 0 ? 8 : data, ea);
+	OUT("ADDQ.%c  #$%x,%s", SZ[size], data == 0 ? 8 : data, ea);
 	return p;
 }
 APTR DECODE_000_ADDX_DN_DN(APTR p, UINT16 op, int size) {
 	// ADDX Dx,Dy
-	printf("ADDX.%c  d%i,d%i\n", SZ[size], DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("ADDX.%c  d%i,d%i", SZ[size], DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_000_ADDX_AN_AN(APTR p, UINT16 op, int size) {
 	// ADDX -(Ay),-(Ax)
-	printf("ADDX.%c  -(a%i),-(a%i)\n", SZ[size], DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("ADDX.%c  -(a%i),-(a%i)", SZ[size], DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_000_AND(APTR p, UINT16 op, int size, int dir) {
 	// AND <ea>,Dn
 	// AND Dn,<ea>
-	printf("AND.%c   ", SZ[size]);
+	OUT("AND.%c   ", SZ[size]);
 	return DECODE_DN_EA(p, op, dir);
 }
 APTR DECODE_000_ANDI(APTR p, UINT16 op, int size) {
 	// ANDI #<data>,<ea>
-	printf("ANDI.%c  ", SZ[size]);
+	OUT("ANDI.%c  ", SZ[size]);
 	return DECODE_IM_EA(p, op, size);
 }
 APTR DECODE_000_ANDI_CCR(APTR p, UINT16 op) {
 	// ANDI #<data>,CCR
-	UINT16 h = *p++;
-	printf("ANDI    #%02x,CCR\n", (UINT8)h);
+	UINT16 h;
+	p = READWORD(p, &h);
+	OUT("ANDI    #%02x,CCR", (UINT8)h);
 	return p;
 }
 APTR DECODE_000_ANDI_SR(APTR p, UINT16 op) {
 	// ANDI #<data>,SR
-	UINT16 h = *p++;
-	printf("ANDI    #%04x,SR\n", h);
+	UINT16 h;
+	p = READWORD(p, &h);
+	OUT("ANDI    #%04x,SR", h);
 	return p;
 }
 APTR DECODE_000_BKPT(APTR p, UINT16 op) {
 	// BKPT #<data>
-	printf("BKPT    #$%x\n", DOWNTO(op, 2, 0));
+	OUT("BKPT    #$%x", DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_000_BRA(APTR p, UINT16 op) {
 	// BRA <label>
-	printf("BRA");
+	OUT("BRA");
 	return DECODE_BRANCH(p, op);
 }
 APTR DECODE_000_BSR(APTR p, UINT16 op) {
 	// BSR <label>
-	printf("BSR");
+	OUT("BSR");
 	return DECODE_BRANCH(p, op);
 }
 APTR DECODE_000_BCC(APTR p, UINT16 op) {
 	// Bcc <label>
-	printf("B%s", CC[DOWNTO(op, 11, 8)]);
+	OUT("B%s", CC[DOWNTO(op, 11, 8)]);
 	return DECODE_BRANCH(p, op);
 }
 APTR DECODE_000_DBCC(APTR p, UINT16 op) {
 	// DBcc.W Dn,<label>
-	printf("DB%s.w  d%x,", CC[DOWNTO(op, 11, 8)], DOWNTO(op, 2, 0));
+	OUT("DB%s.w  d%x,", CC[DOWNTO(op, 11, 8)], DOWNTO(op, 2, 0));
 	return DECODE_LABEL(p, op, 1);
 }
 APTR DECODE_000_BIT_D(APTR p, UINT16 op, char* name) {
 	// BCHG Dn,<ea>    BCLR Dn,<ea>
 	// BSET Dn,<ea>    BTST Dn,<ea>
 	p = DECODE_EA(p, op);
-	printf("%s    d%i,%s\n", name, DOWNTO(op, 11, 9), ea);
+	OUT("%s    d%i,%s", name, DOWNTO(op, 11, 9), ea);
 	return p;
 }
 APTR DECODE_000_BIT_S(APTR p, UINT16 op, char* name) {
 	// BCHG #<data>,<ea>    BCLR #<data>,<ea>
 	// BSET #<data>,<ea>    BTST #<data>,<ea>
-	UINT16 h = *p++;
+	UINT16 h;
+	p = READWORD(p, &h);
 	p = DECODE_EA(p, op);
-	printf("%s    #$%x,%s\n", name, (UINT8)h, ea);
+	OUT("%s    #$%x,%s", name, (UINT8)h, ea);
 	return p;
 }
 APTR DECODE_000_CHK(APTR p, UINT16 op, int size) {
 	// CHK <ea>,Dn
 	p = DECODE_EA(p, op);
-	printf("CHK.%c   %s,d%i\n", SZ[size], ea, DOWNTO(op, 11, 9));
+	OUT("CHK.%c   %s,d%i", SZ[size], ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_CLR(APTR p, UINT16 op, int size) {
 	// CLR <ea>
 	p = DECODE_EA(p, op);
-	printf("CLR.%c   %s\n", SZ[size], ea);
+	OUT("CLR.%c   %s", SZ[size], ea);
 	return p;
 }
 APTR DECODE_000_CMP(APTR p, UINT16 op, int size) {
 	// CMP <ea>,Dn
 	p = DECODE_EA(p, op);
-	printf("CMP.%c   %s,d%i\n", SZ[size], ea, DOWNTO(op, 11, 9));
+	OUT("CMP.%c   %s,d%i", SZ[size], ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_CMPA(APTR p, UINT16 op, int size) {
 	// CMPA <ea>,An
 	p = DECODE_EA(p, op);
-	printf("CMPA.%c  %s,a%i\n", SZ[size], ea, DOWNTO(op, 11, 9));
+	OUT("CMPA.%c  %s,a%i", SZ[size], ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_CMPI(APTR p, UINT16 op, int size) {
 	// CMPI #<data>,<ea>
-	printf("CMPI.%c  ", SZ[size]);
+	OUT("CMPI.%c  ", SZ[size]);
 	return DECODE_IM_EA(p, op, size);
 }
 APTR DECODE_000_CMPM(APTR p, UINT16 op, int size) {
 	// CMPM (Ax)+,(Ay)+
-	printf("CMPM.%c  (a%i)+,(a%i)+\n", SZ[size], DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("CMPM.%c  (a%i)+,(a%i)+", SZ[size], DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_000_DIVS(APTR p, UINT16 op) {
 	// DIVS.W <ea>,Dn
 	p = DECODE_EA(p, op);
-	printf("DIVS.W  %s,d%i\n", ea, DOWNTO(op, 11, 9));
+	OUT("DIVS.W  %s,d%i", ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_DIVU(APTR p, UINT16 op) {
 	// DIVU.W <ea>,Dn
 	p = DECODE_EA(p, op);
-	printf("DIVU.W  %s,d%i\n", ea, DOWNTO(op, 11, 9));
+	OUT("DIVU.W  %s,d%i", ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_EXG(APTR p, UINT16 op) {
 	// EXG Dm,Dn
 	// EXG Ax,Ay
 	// EXG Dn,An
-	printf("EXG     ");
+	OUT("EXG     ");
 	switch (DOWNTO(op, 7, 3)) {
-		case  8: printf("d%i,d%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0)); break;
-		case  9: printf("a%i,a%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0)); break;
-		case 17: printf("d%i,a%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0)); break;
+		case  8: OUT("d%i,d%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0)); break;
+		case  9: OUT("a%i,a%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0)); break;
+		case 17: OUT("d%i,a%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0)); break;
 	}
 	return p;
 }
 APTR DECODE_000_EOR(APTR p, UINT16 op, int size) {
 	// EOR Dn,<ea>
-	printf("EOR.%c   ", SZ[size]);
+	OUT("EOR.%c   ", SZ[size]);
 	return DECODE_DN_EA(p, op, 1);
 }
 APTR DECODE_000_EORI(APTR p, UINT16 op, int size) {
 	// EORI #<data>,<ea>
-	printf("EORI.%c  ", SZ[size]);
+	OUT("EORI.%c  ", SZ[size]);
 	return DECODE_IM_EA(p, op, size);
 }
 APTR DECODE_000_EORI_CCR(APTR p, UINT16 op) {
 	// EORI #<data>,CCR
-	UINT16 h = *p++;
-	printf("EORI    #$%02x,CCR\n", (UINT8)h);
+	UINT16 h;
+	p = READWORD(p, &h);
+	OUT("EORI    #$%02x,CCR", (UINT8)h);
 	return p;
 }
 APTR DECODE_000_EORI_SR(APTR p, UINT16 op) {
 	// EORI #<data>,SR
-	UINT16 h = *p++;
-	printf("EORI    #$%04x,SR\n", h);
+	UINT16 h;
+	p = READWORD(p, &h);
+	OUT("EORI    #$%04x,SR", h);
 	return p;
 }
 APTR DECODE_000_EXT(APTR p, UINT16 op, int size) {
 	// EXT Dn
-	printf("EXT.%c  d%i", SZ[size], DOWNTO(op, 2, 0));
+	OUT("EXT.%c  d%i", SZ[size], DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_000_ILLEGAL(APTR p, UINT16 op) {
 	// ILLEGAL
-	printf("ILLEGAL\n");
+	OUT("ILLEGAL");
 	return p;
 }
 APTR DECODE_000_JMP(APTR p, UINT16 op) {
 	// JMP <ea>
 	p = DECODE_EA(p, op);
-	printf("JMP     %s\n", ea);
+	OUT("JMP     %s", ea);
 	return p;
 }
 APTR DECODE_000_JSR(APTR p, UINT16 op) {
 	// JSR <ea>
 	p = DECODE_EA(p, op);
-	printf("JSR     %s\n", ea);
+	OUT("JSR     %s", ea);
 	return p;
 }
 APTR DECODE_000_LEA(APTR p, UINT16 op) {
 	// LEA <ea>,An
 	p = DECODE_EA(p, op);
-	printf("LEA     %s,a%i\n", ea, DOWNTO(op, 11, 9));
+	OUT("LEA     %s,a%i", ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_LINK(APTR p, UINT16 op) {
 	// LINK An,#<displacement>
-	UINT16 h = *p++;
-	printf("LINK.W  a%i,#$%04x\n", DOWNTO(op, 2, 0), h);
+	UINT16 h;
+	p = READWORD(p, &h);
+	OUT("LINK.W  a%i,#$%04x", DOWNTO(op, 2, 0), h);
 	return p;
 }
 APTR DECODE_000_PEA(APTR p, UINT16 op) {
 	// PEA <ea>
 	p = DECODE_EA(p, op);
-	printf("PEA     %s\n", ea);
+	OUT("PEA     %s", ea);
 	return p;
 }
 APTR DECODE_000_MOVE_CCR(APTR p, UINT16 op, int dir) {
 	// MOVE <ea>,CCR
 	// MOVE CCR,<ea>
 	p = DECODE_EA(p, op);
-	printf("MOVE   ");
-	printf(dir ? "%s,CCR\n" : "CCR,%s\n", ea);
+	OUT("MOVE   ");
+	OUT(dir ? "%s,CCR" : "CCR,%s", ea);
 	return p;
 }
 APTR DECODE_000_MOVE_SR(APTR p, UINT16 op, int dir) {
 	// MOVE <ea>,SR
 	// MOVE SR,<ea>
 	p = DECODE_EA(p, op);
-	printf("MOVE   ");
-	printf(dir ? "%s,SR\n" : "SR,%s\n", ea);
+	OUT("MOVE   ");
+	OUT(dir ? "%s,SR" : "SR,%s", ea);
 	return p;
 }
 APTR DECODE_000_MOVE_USP(APTR p, UINT16 op, int dir) {
 	// MOVE USP,An
 	// MOVE An,USP
-	printf("MOVE    ");
-	printf(dir ? "USP,a%i\n" : "a%i,USP\n", DOWNTO(op, 2, 0));
+	OUT("MOVE    ");
+	OUT(dir ? "USP,a%i" : "a%i,USP", DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_000_MOVE(APTR p, UINT16 op, int size) {
 	// MOVE <ea>,<ea>
 	p = DECODE_EA2(p, DOWNTO(op, 5, 3), DOWNTO(op,  2, 0), 0, size); // src (mode,reg)
-	printf("MOVE.%c  %s", SZ[size], ea);
+	OUT("MOVE.%c  %s", SZ[size], ea);
 	p = DECODE_EA2(p, DOWNTO(op, 8, 6), DOWNTO(op, 11, 9), 0, size); // dst (reg,mode)
-	printf(",%s\n", ea);
+	OUT(",%s", ea);
 	return p;
 }
 APTR DECODE_000_MOVEA(APTR p, UINT16 op, int size) {
 	// MOVEA <ea>,An
 	p = DECODE_EA(p, op);
-	printf("MOVEA.%c %s,a%i\n", SZ[size], ea, DOWNTO(op, 11, 9));
+	OUT("MOVEA.%c %s,a%i", SZ[size], ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_MOVEM(APTR p, UINT16 op, int size, int dir) {
 	// MOVEM <ea>,<list>
 	// MOVEM <list>,<ea>
-	UINT16 list = *p++;
-	printf("MOVEM.%c ", SZ[size]);
+	UINT16 list;
+	p = READWORD(p, &list);
+	OUT("MOVEM.%c ", SZ[size]);
 	if(dir) {
 		p = DECODE_EA(p, op);
-		printf("%s,", ea);
+		OUT("%s,", ea);
 		DECODE_LIST(op, list);
 	} else {
 		DECODE_LIST(op, list);
 		p = DECODE_EA(p, op);
-		printf(",%s", ea);
+		OUT(",%s", ea);
 	}
-	printf("\n", ea);
 	return p;
 }
 APTR DECODE_000_MOVEP(APTR p, UINT16 op) {
 	// MOVEP (d16,An),Dn
 	// MOVEP Dn,(d16,An)
-	UINT16 d16 = *p++;
-	printf("MOVEP.%c ", SZ[1 + BIT(op, 6)]);
+	UINT16 d16;
+	p = READWORD(p, &d16);
+	OUT("MOVEP.%c ", SZ[1 + BIT(op, 6)]);
 	if (BIT(op, 7))
-		printf("d%i,$%04x(a%i)\n", DOWNTO(op, 11, 9), d16, DOWNTO(op, 2, 0));
+		OUT("d%i,$%04x(a%i)", DOWNTO(op, 11, 9), d16, DOWNTO(op, 2, 0));
 	else
-		printf("$%04x(a%i),d%i\n", d16, DOWNTO(op, 2, 0), DOWNTO(op, 11, 9));
+		OUT("$%04x(a%i),d%i", d16, DOWNTO(op, 2, 0), DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_MOVEQ(APTR p, UINT16 op) {
 	// MOVEQ.L #<data>,Dn
-	printf("MOVEQ.L #$%02x,d%i\n", DOWNTO(op, 7, 0), DOWNTO(op, 11, 9));
+	OUT("MOVEQ.L #$%02x,d%i", DOWNTO(op, 7, 0), DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_MULS(APTR p, UINT16 op) {
 	// MULS.W <ea>,Dn
 	p = DECODE_EA(p, op);
-	printf("MULS.W  %s,d%x\n", ea, DOWNTO(op, 11, 9));
+	OUT("MULS.W  %s,d%x", ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_MULU(APTR p, UINT16 op) {
 	// MULU.W <ea>,Dn
 	p = DECODE_EA(p, op);
-	printf("MULU.W  %s,d%x\n", ea, DOWNTO(op, 11, 9));
+	OUT("MULU.W  %s,d%x", ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_NEG(APTR p, UINT16 op, int size) {
 	// NEG <ea>
 	p = DECODE_EA(p, op);
-	printf("NEG.%c   %s\n", SZ[size], ea);
+	OUT("NEG.%c   %s", SZ[size], ea);
 	return p;
 }
 APTR DECODE_000_NEGX(APTR p, UINT16 op, int size) {
 	// NEGX <ea>
 	p = DECODE_EA(p, op);
-	printf("NEGX.%c  %s\n", SZ[size], ea);
+	OUT("NEGX.%c  %s", SZ[size], ea);
 	return p;
 }
 APTR DECODE_000_NOP(APTR p, UINT16 op) {
 	// NOP
-	printf("NOP\n");
+	OUT("NOP");
 	return p;
 }
 APTR DECODE_000_NOT(APTR p, UINT16 op, int size) {
 	// NOT <ea>
 	p = DECODE_EA(p, op);
-	printf("NOT.%c   %s\n", SZ[size], ea);
+	OUT("NOT.%c   %s", SZ[size], ea);
 	return p;
 }
 APTR DECODE_000_OR(APTR p, UINT16 op, int size, int dir) {
 	// OR <ea>,Dn
 	// OR Dn,<ea>
-	printf("OR.%c    ", SZ[size]);
+	OUT("OR.%c    ", SZ[size]);
 	return DECODE_DN_EA(p, op, dir);
 }
 APTR DECODE_000_ORI(APTR p, UINT16 op, int size) {
 	// ORI #<data>,<ea>
-	printf("ORI.%c   ", SZ[size]);
+	OUT("ORI.%c   ", SZ[size]);
 	return DECODE_IM_EA(p, op, size);
 }
 APTR DECODE_000_ORI_CCR(APTR p, UINT16 op) {
 	// ORI #<data>,CCR
-	UINT16 h = *p++;
-	printf("ORI     #$%02x,CCR\n", (UINT8)h);
+	UINT16 imm;
+	p = READWORD(p, &imm);
+	OUT("ORI     #$%02x,CCR", (UINT8)imm);
 	return p;
 }
 APTR DECODE_000_ORI_SR(APTR p, UINT16 op) {
 	// ORI #<data>,SR
-	UINT16 h = *p++;
-	printf("ORI     #$%04x,SR\n", h);
+	UINT16 imm;
+	p = READWORD(p, &imm);
+	OUT("ORI     #$%04x,SR", imm);
 	return p;
 }
 APTR DECODE_000_RESET(APTR p, UINT16 op) {
 	// RESET
-	printf("RESET\n");
+	OUT("RESET");
 	return p;
 }
 APTR DECODE_000_RTE(APTR p, UINT16 op) {
 	// RTE
-	printf("RTE\n");
+	OUT("RTE");
 	return p;
 }
 APTR DECODE_000_RTR(APTR p, UINT16 op) {
 	// RTR
-	printf("RTR\n");
+	OUT("RTR");
 	return p;
 }
 APTR DECODE_000_RTS(APTR p, UINT16 op) {
 	// RTS
-	printf("RTS\n");
+	OUT("RTS");
 	return p;
 }
 APTR DECODE_000_SCC(APTR p, UINT16 op) {
 	// Scc <ea>
 	p = DECODE_EA(p, op);
-	printf("S%s     %s\n", CC[DOWNTO(op, 11, 8)], ea);
+	OUT("S%s     %s", CC[DOWNTO(op, 11, 8)], ea);
 	return p;
 }
 APTR DECODE_000_SHIFT(APTR p, UINT16 op) {
@@ -709,24 +772,24 @@ APTR DECODE_000_SHIFT(APTR p, UINT16 op) {
 	int value;
 	if (DOWNTO(op, 7, 6) == 3) {
 		switch (DOWNTO(op, 10 ,9)) {
-			case 0: printf("AS" ); break; // Arithmetic Shift
-			case 1: printf("LS" ); break; // Logical Shift
-			case 2: printf("ROX"); break; // Rotate with Extend
-			case 3: printf("RO" ); break; // Rotate without Extend
+			case 0: OUT("AS" ); break; // Arithmetic Shift
+			case 1: OUT("LS" ); break; // Logical Shift
+			case 2: OUT("ROX"); break; // Rotate with Extend
+			case 3: OUT("RO" ); break; // Rotate without Extend
 		}
 		p = DECODE_EA(p, op);
-		printf("%c.%c %s\n", LR[BIT(op, 8)], SZ[DOWNTO(op, 7, 6)], ea);
+		OUT("%c.%c %s", LR[BIT(op, 8)], SZ[DOWNTO(op, 7, 6)], ea);
 	}
 	else
 	{
 		switch (DOWNTO(op, 4, 3)) {
-			case 0: printf("AS" ); break; // Arithmetic Shift
-			case 1: printf("LS" ); break; // Logical Shift
-			case 2: printf("ROX"); break; // Rotate with Extend
-			case 3: printf("RO" ); break; // Rotate without Extend
+			case 0: OUT("AS" ); break; // Arithmetic Shift
+			case 1: OUT("LS" ); break; // Logical Shift
+			case 2: OUT("ROX"); break; // Rotate with Extend
+			case 3: OUT("RO" ); break; // Rotate without Extend
 		}
 		value = DOWNTO(op, 11, 9);
-		printf("%c.%c   %s%x,d%x\n",
+		OUT("%c.%c   %s%x,d%x",
 			LR[BIT(op, 8)],           // Direction
 			SZ[DOWNTO(op, 7, 6)],     // Size
 			BIT(op, 5) ? "D" : "#$",  // Imm or Reg Mode
@@ -737,74 +800,75 @@ APTR DECODE_000_SHIFT(APTR p, UINT16 op) {
 }
 APTR DECODE_000_STOP(APTR p, UINT16 op) {
 	// STOP #<data>
-	UINT16 l = *p++;
-	printf("STOP #$%x\n", l);
+	UINT16 imm;
+	p = READWORD(p, &imm);
+	OUT("STOP #$%x", imm);
 	return p;
 }
 APTR DECODE_000_SUB(APTR p, UINT16 op, int size, int dir) {
 	// SUB <ea>,Dn
 	// SUB Dn,<ea>
-	printf("SUB.%c   ", SZ[size]);
+	OUT("SUB.%c   ", SZ[size]);
 	return DECODE_DN_EA(p, op, dir);
 }
 APTR DECODE_000_SUBA(APTR p, UINT16 op, int size) {
 	// SUBA <ea>,An
 	p = DECODE_EA(p, op);
-	printf("SUBA.%c  %s,a%i\n", SZ[size], ea, DOWNTO(op, 11, 9));
+	OUT("SUBA.%c  %s,a%i", SZ[size], ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_000_SUBI(APTR p, UINT16 op, int size) {
 	// SUBI #<data>,<ea>
-	printf("SUBI.%c  ", SZ[size]);
+	OUT("SUBI.%c  ", SZ[size]);
 	return DECODE_IM_EA(p, op, size);
 }
 APTR DECODE_000_SUBQ(APTR p, UINT16 op, int size) {
 	// SUBQ #<data>,<ea>
 	int data = DOWNTO(op, 11, 9);
 	p = DECODE_EA(p, op);
-	printf("SUBQ.%c  #$%x,%s\n", SZ[size], data == 0 ? 8 : data, ea);
+	OUT("SUBQ.%c  #$%x,%s", SZ[size], data == 0 ? 8 : data, ea);
 	return p;
 }
 APTR DECODE_000_SUBX_DN_DN(APTR p, UINT16 op, int size) {
 	// SUBX Dx,Dy
-	printf("SUBX.%c  d%i,d%i\n", SZ[size], DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("SUBX.%c  d%i,d%i", SZ[size], DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_000_SUBX_AN_AN(APTR p, UINT16 op, int size) {
 	// SUBX -(Ax),-(Ay)
-	printf("SUBX.%c  -(a%x),-(a%x)\n", SZ[size], DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("SUBX.%c  -(a%x),-(a%x)", SZ[size], DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_000_SWAP(APTR p, UINT16 op) {
 	// SWAP Dn
-	printf("SWAP    d%i\n", DOWNTO(op, 2, 0));
+	OUT("SWAP    d%i", DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_000_TAS(APTR p, UINT16 op) {
 	// TAS <ea>
 	p = DECODE_EA(p, op);
-	printf("TAS     %s\n", ea);
+	OUT("TAS     %s", ea);
 	return p;
 }
 APTR DECODE_000_TRAP(APTR p, UINT16 op) {
 	// TRAP #<vector>
-	printf("TRAP    #$%x\n", DOWNTO(op, 3, 0));
+	OUT("TRAP    #$%x", DOWNTO(op, 3, 0));
 	return p;
 }
 APTR DECODE_000_TRAPV(APTR p, UINT16 op) {
 	// TRAPV
-	printf("TRAPV\n");
+	OUT("TRAPV");
 	return p;
 }
 APTR DECODE_000_TST(APTR p, UINT16 op, int size) {
 	// TST <ea>
 	p = DECODE_EA(p, op);
-	printf("TST.%c   %s\n", SZ[size], ea);
+	OUT("TST.%c   %s", SZ[size], ea);
 	return p;
 }
 APTR DECODE_000_UNLK(APTR p, UINT16 op) {
 	// UNLK An
-	printf("UNLK    a%i\n", DOWNTO(op, 2, 0));
+	OUT("UNLK    a%i", DOWNTO(op, 2, 0));
 	return p;
 }
 
@@ -814,26 +878,28 @@ APTR DECODE_000_UNLK(APTR p, UINT16 op) {
 
 APTR DECODE_010_RTD(APTR p, UINT16 op) {
 	// RTD #<displacement>
-	UINT16 l = *p++;
-	printf("RTD #$%x\n", l);
+	UINT16 d16;
+	p = READWORD(p, &d16);
+	OUT("RTD #$%x", d16);
 	return p;
 }
 APTR DECODE_010_MOVEC(APTR p, UINT16 op) {
 	// MOVEC Rc,Rn
 	// MOVEC Rn,Rc
-	UINT16 h = *p++;
-	DECODE_CREG(DOWNTO(h, 11, 0));
-	printf("MOVEC   ");
+	UINT16 ex;
+	p = READWORD(p, &ex);
+	DECODE_CREG(DOWNTO(ex, 11, 0));
+	OUT("MOVEC   ");
 	if (BIT(op, 0))
-		printf("%c%i,%s\n", DA[BIT(h, 15)], DOWNTO(h, 14, 12), cr);
+		OUT("%c%i,%s", DA[BIT(ex, 15)], DOWNTO(ex, 14, 12), cr);
 	else
-		printf("%s,%c%i\n", cr, DA[BIT(h, 15)], DOWNTO(h, 14, 12));
+		OUT("%s,%c%i", cr, DA[BIT(ex, 15)], DOWNTO(ex, 14, 12));
 	return p;
 }
 APTR DECODE_010_MOVES(APTR p, UINT16 op, UINT16 ex) {
 	// MOVES Rn,<ea>
 	// MOVES <ea>,Rn
-	printf("MOVES.%c ", SZ[DOWNTO(op, 7, 6)]);
+	OUT("MOVES.%c ", SZ[DOWNTO(op, 7, 6)]);
 	return DECODE_RN_EA(p, op, ex);
 }
 
@@ -850,12 +916,13 @@ APTR DECODE_020_BF(APTR p, UINT16 op, int reg, int dir, char* name) {
 	// BFINS  Dn,<ea>{offset:width}
 	// BFSET  <ea>{offset:width}
 	// BFTST  <ea>{offset:width}
-	UINT16 ex = *p++;
+	UINT16 ex;
+	p = READWORD(p, &ex);
 	p = DECODE_EA(p, op);
-	printf("%s  ", name);
+	OUT("%s  ", name);
 	if (reg && dir)
-		printf("d%i,", DOWNTO(ex, 14, 12));
-	printf("%s{%s%x:%s%x}",
+		OUT("d%i,", DOWNTO(ex, 14, 12));
+	OUT("%s{%s%x:%s%x}",
 		ea,
 		BIT(ex, 11) ? "d" : "$",
 		BIT(ex, 11) ? DOWNTO(ex, 8 ,6) : DOWNTO(ex, 10 ,6),
@@ -863,23 +930,23 @@ APTR DECODE_020_BF(APTR p, UINT16 op, int reg, int dir, char* name) {
 		BIT(ex,  5) ? DOWNTO(ex, 2, 0) : DOWNTO(ex,  4, 0)
 	);
 	if (reg && !dir)
-		printf(",d%i", DOWNTO(ex, 14, 12));
-	printf("\n");
+		OUT(",d%i", DOWNTO(ex, 14, 12));
 	return p;
 }
-
 APTR DECODE_020_CAS(APTR p, UINT16 op, int size) {
 	// CAS Dc,Du,<ea>
-	UINT16 ex = *p++;
+	UINT16 ex;
+	p = READWORD(p, &ex);
 	p = DECODE_EA(p, op);
-	printf("CAS.%c   d%i,d%i,%s\n", SZ[size], DOWNTO(ex, 2, 0), DOWNTO(ex, 8, 6), ea);
+	OUT("CAS.%c   d%i,d%i,%s", SZ[size], DOWNTO(ex, 2, 0), DOWNTO(ex, 8, 6), ea);
 	return p;
 }
 APTR DECODE_020_CAS2(APTR p, UINT16 op, int size) {
 	// CAS2 Dc1:Dc2,Du1:Du2,(Rn1):(Rn2)
-	UINT16 ex1 = *p++;
-	UINT16 ex2 = *p++;
-	printf("CAS2.%c  d%i:d%i,d%i:d%i,(%c%i):(%c%i)\n", 
+	UINT16 ex1, ex2;
+	p = READWORD(p, &ex1);
+	p = READWORD(p, &ex2);
+	OUT("CAS2.%c  d%i:d%i,d%i:d%i,(%c%i):(%c%i)", 
 		SZ[size], 
 		DOWNTO(ex1, 2, 0), DOWNTO(ex2,  2,  0), // Dc1,Dc2
 		DOWNTO(ex1, 8, 6), DOWNTO(ex2,  8,  6), // Du1,Du2
@@ -891,28 +958,42 @@ APTR DECODE_020_CAS2(APTR p, UINT16 op, int size) {
 APTR DECODE_020_CHK2(APTR p, UINT16 op, UINT16 ex, int size) {
 	// CHK2 <ea>,Rn
 	p = DECODE_EA(p, op);
-	printf("CHK2.%c  %s,%c%i\n", SZ[size], ea, DA[BIT(ex, 15)], DOWNTO(ex, 14, 12));
+	OUT("CHK2.%c  %s,%c%i", SZ[size], ea, DA[BIT(ex, 15)], DOWNTO(ex, 14, 12));
 	return p;
 }
 APTR DECODE_020_CMP2(APTR p, UINT16 op, UINT16 ex, int size) {
 	// CMP2 <ea>,Rn
 	p = DECODE_EA(p, op);
-	printf("CMP2.%c  %s,%c%i\n", SZ[size], ea, DA[BIT(ex, 15)], DOWNTO(ex, 14, 12));
+	OUT("CMP2.%c  %s,%c%i", SZ[size], ea, DA[BIT(ex, 15)], DOWNTO(ex, 14, 12));
 	return p;
 }
 APTR DECODE_020_DIV(APTR p, UINT16 op) { // TODO: DIVxL <ea>,Dr:Dq
 	// DIVU.L  <ea>,Dq     32/16 => 32q
 	// DIVU.L  <ea>,Dr:Dq  64/32 => 32r-32q
-	// DIVUL.L <ea>,Dr:Dq  32/32 => 32r-32q
+	// DIVUL.L <ea>,Dr:Dq  32/32 => 32r-32q    ==>   TODO: Implement
 	// DIVS.L  <ea>,Dq     32/32 => 32q
 	// DIVS.L  <ea>,Dr:Dq  64/32 => 32r-32q
-	// DIVSL.L <ea>,Dr:Dq  32/32 => 32r-32q
-	UINT16 ex = *p++;
+	// DIVSL.L <ea>,Dr:Dq  32/32 => 32r-32q    ==>   TODO: Implement
+	UINT16 ex;
+	p = READWORD(p, &ex);
 	p = DECODE_EA(p, op);
-	printf("DIV%s.L  %s,", BIT(ex, 11) ? "S" : "U", ea);
+	OUT("DIV%s.L  %s,", BIT(ex, 11) ? "S" : "U", ea);
 	if (BIT(ex, 10))
-		printf("d%i:", DOWNTO(ex, 14, 12));
-	printf("d%i\n", DOWNTO(ex, 2, 0));
+		OUT("d%i:", DOWNTO(ex, 14, 12));
+	OUT("d%i", DOWNTO(ex, 2, 0));
+	return p;
+}
+APTR DECODE_020_EXTB(APTR p, UINT16 op) {
+	// EXTB.L  Dn
+	OUT("EXTB.L  d%i", DOWNTO(op, 2, 0));
+	return p;
+}
+APTR DECODE_020_LINK(APTR p, UINT16 op) {
+	// LINK.L  An,#<displacement>
+	UINT16 l, h;
+	p = READLONG(p, &h);
+	p = READWORD(p, &l);
+	OUT("LINK.L  a%i,#$%08x", DOWNTO(op, 2, 0), h << 16 | l);
 	return p;
 }
 APTR DECODE_020_MUL(APTR p, UINT16 op) {
@@ -920,39 +1001,25 @@ APTR DECODE_020_MUL(APTR p, UINT16 op) {
 	// MULU.L <ea>,Dh:Dl
 	// MULS.L <ea>,Dl
 	// MULS.L <ea>,Dh:Dl
-	UINT16 ex = *p++;
+	UINT16 ex;
+	p = READWORD(p, &ex);
 	p = DECODE_EA(p, op);
-	printf("MUL%s.L  %s,", BIT(ex, 11) ? "S" : "U", ea);
+	OUT("MUL%s.L  %s,", BIT(ex, 11) ? "S" : "U", ea);
 	if (BIT(ex, 10))
-		printf("d%i:", DOWNTO(ex, 2, 0));
-	printf("d%i\n", DOWNTO(ex, 14, 12));
+		OUT("d%i:", DOWNTO(ex, 2, 0));
+	OUT("d%i", DOWNTO(ex, 14, 12));
 	return p;
 }
-
-APTR DECODE_020_EXTB(APTR p, UINT16 op) {
-	// EXTB.L  Dn
-	printf("EXTB.L  d%i", DOWNTO(op, 2, 0));
-	return p;
-}
-APTR DECODE_020_LINK(APTR p, UINT16 op) {
-	// LINK.L  An,#<displacement>
-	UINT16 l = *p++;
-	UINT16 h = *p++;
-	printf("LINK.L  a%i,#$%08x\n", DOWNTO(op, 2, 0), h << 16 | l);
-	return p;
-}
-APTR DECODE_020_PACK(APTR p, UINT16 op) { // TODO
+APTR DECODE_020_PACK_UNPK(APTR p, UINT16 op, int dir) {
 	// PACK –(Ax),–(Ay),#<adjustment>
-	// PACK Dx,Dy,#<adjustment>
-	UINT16 ex = *p++;
-	printf("PACK\n");
-	return p;
-}
-APTR DECODE_020_UNPK(APTR p, UINT16 op) { // TODO
 	// UNPK –(Ax),–(Ay),#<adjustment>
+	// PACK Dx,Dy,#<adjustment>
 	// UNPK Dx,Dy,#<adjustment>
-	UINT16 ex = *p++;
-	printf("UNPK\n");
+	UINT16 ex;
+	p = READWORD(p, &ex);
+	OUT(dir ? "UNPK    " : "PACK    ");
+	OUT(BIT(op, 3) ? "-(a%i),-(a%i)" : "d%x,d%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("#$%x", ex);
 	return p;
 }
 APTR DECODE_020_TRAPCC(APTR p, UINT16 op, int mode) {
@@ -960,16 +1027,16 @@ APTR DECODE_020_TRAPCC(APTR p, UINT16 op, int mode) {
 	// TRAPcc.W #<data>
 	// TRAPcc.L #<data>
 	UINT16 l, h;
-	printf("TRAP%s", CC[DOWNTO(op, 11, 8)]);
+	OUT("TRAP%s", CC[DOWNTO(op, 11, 8)]);
 	switch (mode) {
 		case 2:
-			h = *p++;
-			printf("  #$%04x\n", h);
+			p = READWORD(p, &h);
+			OUT("  #$%04x", h);
 			break;
 		case 3:
-			h = *p++;
-			l = *p++;
-			printf("  #$%08x\n", h << 16 | l);
+			p = READWORD(p, &h);
+			p = READWORD(p, &l);
+			OUT("  #$%08x", h << 16 | l);
 			break;
 		case 4:
 			// No Operand
@@ -983,28 +1050,28 @@ APTR DECODE_020_TRAPCC(APTR p, UINT16 op, int mode) {
  ***********************************************************************************/
 
 APTR DECODE_040_MOVE16(APTR p, UINT16 op) {
-	UINT16 l, h = *p++;
-	printf("MOVE16  ");
+	UINT16 l, h;
+	p = READWORD(p, &h);
+	OUT("MOVE16  ");
 	switch (DOWNTO(op, 5, 3)) {
-		case 0: l = *p++; printf("(a%x)+,($%x).L", DOWNTO(op, 2, 0), (( h << 16 ) | l)); break;
-		case 1: l = *p++; printf("($%x).L,(a%x)+", DOWNTO(op, 2, 0), (( h << 16 ) | l)); break;
-		case 2: l = *p++; printf("(a%x),($%x).L",  DOWNTO(op, 2, 0), (( h << 16 ) | l)); break;
-		case 3: l = *p++; printf("($%x).L,(a%x)",  DOWNTO(op, 2, 0), (( h << 16 ) | l)); break;
-		case 4:           printf("(a%x)+,(a%x)+",  DOWNTO(op, 2, 0), DOWNTO(h, 14, 12)); break;
+		case 0: p = READWORD(p, &l); OUT("(a%x)+,($%x).L", DOWNTO(op, 2, 0), h << 16 | l); break;
+		case 1: p = READWORD(p, &l); OUT("($%x).L,(a%x)+", DOWNTO(op, 2, 0), h << 16 | l); break;
+		case 2: p = READWORD(p, &l); OUT("(a%x),($%x).L",  DOWNTO(op, 2, 0), h << 16 | l); break;
+		case 3: p = READWORD(p, &l); OUT("($%x).L,(a%x)",  DOWNTO(op, 2, 0), h << 16 | l); break;
+		case 4: OUT("(a%x)+,(a%x)+",  DOWNTO(op, 2, 0), DOWNTO(h, 14, 12)); break;
 	}
-	printf("\n");
 	return p;
 }
 APTR DECODE_040_CINV(APTR p, UINT16 op) {
 	// CINVL <caches>,(An)   -- Line
 	// CINVP <caches>,(An)   -- Page
 	// CINVA <caches>        -- All
-	printf("CINV");
+	OUT("CINV");
 	switch (DOWNTO(op, 4, 3)) {
-		case 0: printf("    ILLEGAL\n" );
-		case 1: printf("L   %i,(A%i)\n", DOWNTO(op, 7, 6), DOWNTO(op, 2, 0));
-		case 2: printf("P   %i,(A%i)\n", DOWNTO(op, 7, 6), DOWNTO(op, 2, 0));
-		case 3: printf("A   %i\n"      , DOWNTO(op, 7, 6));
+		case 0: OUT("    ILLEGAL" );
+		case 1: OUT("L   %i,(A%i)", DOWNTO(op, 7, 6), DOWNTO(op, 2, 0));
+		case 2: OUT("P   %i,(A%i)", DOWNTO(op, 7, 6), DOWNTO(op, 2, 0));
+		case 3: OUT("A   %i"      , DOWNTO(op, 7, 6));
 	}
 	return p;
 }
@@ -1016,169 +1083,172 @@ APTR DECODE_040_CINV(APTR p, UINT16 op) {
 APTR DECODE_080_ABS(APTR p, UINT16 op, UINT16 ex) {
 	// ABS <ea>,Rn
 	// ABS Rn,<ea>
-	printf("ABS.%c   ", SZ[DOWNTO(op, 7, 6)]);
+	OUT("ABS.%c   ", SZ[DOWNTO(op, 7, 6)]);
 	return DECODE_RN_EA(p, op, ex);
 }
 APTR DECODE_080_ADDQ(APTR p, UINT16 op) {
 	// ADDQ.L #<data>,Bn
-	printf("ADDQ.L  #%i,b%x\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("ADDQ.L  #%i,b%x", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_ADDIW(APTR p, UINT16 op) {
 	// ADDIW.L #<data>,<ea>
-	UINT16 h = *p++;
+	UINT16 imm;
+	p = READWORD(p, &imm);
 	p = DECODE_EA(p, op);
-	printf("ADDIW.L #$%04x,%s\n", h, ea);
+	OUT("ADDIW.L #$%04x,%s", imm, ea);
 	return p;
 }
 APTR DECODE_080_ADD_BN_DN(APTR p, UINT16 op) {
 	// ADD.L Bn,Dn
-	printf("ADD.L   b%i,d%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("ADD.L   b%i,d%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_ADD_BN_AN(APTR p, UINT16 op) {
 	// ADDA.L Bn,An
-	printf("ADDA.L  b%i,a%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("ADDA.L  b%i,a%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_ADD_BN_BN(APTR p, UINT16 op) {
 	// ADDA.L Bn,Bn
-	printf("ADDA.L  b%i,b%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("ADDA.L  b%i,b%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_ADD_EA_BN(APTR p, UINT16 op) {
 	// ADDA.L <ea>,Bn
 	p = DECODE_EA(p, op);
-	printf("ADDA.L  %s,b%i\n", ea, DOWNTO(op, 11, 9));
+	OUT("ADDA.L  %s,b%i", ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_080_AND(APTR p, UINT16 op, UINT16 ex) {
 	// AND <ea>,Rn
 	// AND Rn,<ea>
-	printf("AND.%c   ", SZ[DOWNTO(op, 7, 6)]);
+	OUT("AND.%c   ", SZ[DOWNTO(op, 7, 6)]);
 	return DECODE_RN_EA(p, op, ex);
 }
 APTR DECODE_080_ANDN(APTR p, UINT16 op, UINT16 ex) {
 	// ANDN <ea>,Rn
 	// ANDN Rn,<ea>
-	printf("ANDN.%c  ", SZ[DOWNTO(op, 7, 6)]);
+	OUT("ANDN.%c  ", SZ[DOWNTO(op, 7, 6)]);
 	return DECODE_RN_EA(p, op, ex);
 }
 APTR DECODE_080_CMPIW(APTR p, UINT16 op) {
 	// CMPIW.L #<data>,<ea>
-	UINT16 h = *p++;
+	UINT16 imm;
+	p = READWORD(p, &imm);
 	p = DECODE_EA(p, op);
-	printf("CMPIW.L #$%04x,%s\n", h, ea);
+	OUT("CMPIW.L #$%04x,%s", imm, ea);
 	return p;
 }
 APTR DECODE_080_CMP_BN_DN(APTR p, UINT16 op) {
 	// CMP.L Bn,Dn
-	printf("CMP.L   b%i,d%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("CMP.L   b%i,d%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_CMP_BN_AN(APTR p, UINT16 op) {
 	// CMPA.L Bn,An
-	printf("CMPA.L  b%i,a%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("CMPA.L  b%i,a%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_CMP_BN_BN(APTR p, UINT16 op) {
 	// CMPA.L Bn,Bn
-	printf("CMPA.L  b%i,b%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("CMPA.L  b%i,b%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_CMP_EA_BN(APTR p, UINT16 op) {
 	// CMPA.L <ea>,Bn
 	p = DECODE_EA(p, op);
-	printf("CMPA.L  %s,b%i\n", ea, DOWNTO(op, 11, 9));
+	OUT("CMPA.L  %s,b%i", ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_080_EOR(APTR p, UINT16 op, UINT16 ex) {
 	// EOR <ea>,Rn
 	// EOR Rn,<ea>
-	printf("EOR.%c   ", SZ[DOWNTO(op, 7, 6)]);
+	OUT("EOR.%c   ", SZ[DOWNTO(op, 7, 6)]);
 	return DECODE_RN_EA(p, op, ex);
 }
 APTR DECODE_080_LEA(APTR p, UINT16 op, int dir) {
 	// LEA <ea>,Bn
 	// LEA Bn,An
-	printf("LEA     ");
+	OUT("LEA     ");
 	if (dir) {
 		p = DECODE_EA(p, op);
-		printf("%s,b", ea);
+		OUT("%s,b", ea);
 	} else {
-		printf("b%i,a", DOWNTO(op, 2, 0));
+		OUT("b%i,a", DOWNTO(op, 2, 0));
 	}
-	printf("%i\n", DOWNTO(op, 11, 9));
+	OUT("%i", DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_080_MAX(APTR p, UINT16 op, UINT16 ex) {
 	// MAX <ea>,Rn
 	// MAX Rn,<ea>
-	printf("MAX.%c   ", SZ[DOWNTO(op, 7, 6)]);
+	OUT("MAX.%c   ", SZ[DOWNTO(op, 7, 6)]);
 	return DECODE_RN_EA(p, op, ex);
 }
 APTR DECODE_080_MIN(APTR p, UINT16 op, UINT16 ex) {
 	// MIN <ea>,Rn
 	// MIN Rn,<ea>
-	printf("MIN.%c   ", SZ[DOWNTO(op, 7, 6)]);
+	OUT("MIN.%c   ", SZ[DOWNTO(op, 7, 6)]);
 	return DECODE_RN_EA(p, op, ex);
 }
 APTR DECODE_080_MOVE(APTR p, UINT16 op, int dir) {
 	// MOVE.L  Bn,<ea>
 	// MOVEA.L <ea>,Bn
 	p = DECODE_EA(p, op);
-	printf("MOVE.L  ");
+	OUT("MOVE.L  ");
 	if (dir)
-		printf("b%i,%s\n", DOWNTO(op, 11, 9), ea);
+		OUT("b%i,%s", DOWNTO(op, 11, 9), ea);
 	else
-		printf("%s,b%i\n", ea, DOWNTO(op, 11, 9));
+		OUT("%s,b%i", ea, DOWNTO(op, 11, 9));
 	return p;
 }
 APTR DECODE_080_MOVEX(APTR p, UINT16 op, UINT16 ex) {
 	// MOVEX <ea>,Rn
 	// MOVEX Rn,<ea>
-	printf("MOVEX.%c ", SZ[DOWNTO(op, 7, 6)]);
+	OUT("MOVEX.%c ", SZ[DOWNTO(op, 7, 6)]);
 	return DECODE_RN_EA(p, op, ex);
 }
 APTR DECODE_080_OR(APTR p, UINT16 op, UINT16 ex) {
 	// OR <ea>,Rn
 	// OR Rn,<ea>
-	printf("OR.%c    ", SZ[DOWNTO(op, 7, 6)]);
+	OUT("OR.%c    ", SZ[DOWNTO(op, 7, 6)]);
 	return DECODE_RN_EA(p, op, ex);
 }
 APTR DECODE_080_PERM(APTR p, UINT16 op) {
 	// PERM #<data>,Rm,Rn
-	UINT16 ex = *p++;
-	printf("PERM    #$%s,%c%i,%c%i", 
-	DOWNTO(op, 11, 0),                    // Immediate 12-bits
-	DA[BIT(op,  4)], DOWNTO(op,  3,  0),  // Regiser A
-	DA[BIT(ex, 15)], DOWNTO(op, 14, 12)); // Regiser B
+	UINT16 ex;
+	p = READWORD(p, &ex);
+	OUT("PERM    #$%s,%c%i,%c%i", 
+	DOWNTO(ex, 11, 0),                    // Immediate 12-bits
+	DA[BIT(op,  3)], DOWNTO(op,  2,  0),  // Register A
+	DA[BIT(ex, 15)], DOWNTO(ex, 14, 12)); // Register B
 	return p;
 }
 APTR DECODE_080_SUBQ(APTR p, UINT16 op) {
 	// SUBQ.L #<data>,Bn
-	printf("SUBQ.L  #%i,b%x\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("SUBQ.L  #%i,b%x", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_SUB_BN_DN(APTR p, UINT16 op) {
 	// SUB.L Bn,Dn
-	printf("SUB.L   b%i,d%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("SUB.L   b%i,d%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_SUB_BN_AN(APTR p, UINT16 op) {
 	// SUBA.L Bn,An
-	printf("SUBA.L  b%i,a%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("SUBA.L  b%i,a%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_SUB_BN_BN(APTR p, UINT16 op) {
 	// SUBA.L Bn,Bn
-	printf("SUBA.L  b%i,b%i\n", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
+	OUT("SUBA.L  b%i,b%i", DOWNTO(op, 11, 9), DOWNTO(op, 2, 0));
 	return p;
 }
 APTR DECODE_080_SUB_EA_BN(APTR p, UINT16 op) {
 	// SUBA.L <ea>,Bn
 	p = DECODE_EA(p, op);
-	printf("SUBA.L  %s,b%i\n", ea, DOWNTO(op, 11, 9));
+	OUT("SUBA.L  %s,b%i", ea, DOWNTO(op, 11, 9));
 	return p;
 }
 
@@ -1186,9 +1256,9 @@ APTR DECODE_080_SUB_EA_BN(APTR p, UINT16 op) {
  * DECODE - LINES #0 to #F
  ***********************************************************************************/
 
-APTR LINE_0(APTR p) {
+APTR DECODE_LINE_0(APTR p, UINT16 op) {
 	
-	UINT16 ex, op = *p++;
+	UINT16 ex;
 	
 	if (BIT(op, 8)) // MOVEP, BTST, BCHG, BCLR, BSET (dynamic)
 	{
@@ -1219,10 +1289,10 @@ APTR LINE_0(APTR p) {
 				case 2:
 					return DECODE_000_ORI(p, op, 2);
 				case 3:
-					ex = *p++;
+					
 					if (BIT(ex, 11))
-						return DECODE_020_CHK2(p, op, ex, 0);
-					return DECODE_020_CMP2(p, op, ex, 0);
+						return DECODE_020_CMP2(p, op, ex, 0);
+					return DECODE_020_CHK2(p, op, ex, 0);
 			}
 			
 		case 1: // ANDI, CHK2.W, CMP2.W
@@ -1239,10 +1309,10 @@ APTR LINE_0(APTR p) {
 				case 2:
 					return DECODE_000_ANDI(p, op, 2);
 				case 3:
-					ex = *p++;
+					p = READWORD(p, &ex);
 					if (BIT(ex, 11))
-						return DECODE_020_CHK2(p, op, ex, 1);
-					return DECODE_020_CMP2(p, op, ex, 1);
+						return DECODE_020_CMP2(p, op, ex, 1);
+					return DECODE_020_CHK2(p, op, ex, 1);
 			}
 			
 		case 2: // SUBI, CHK2.L, CMP2.L
@@ -1252,10 +1322,10 @@ APTR LINE_0(APTR p) {
 				case 1: return DECODE_000_SUBI(p, op, 1);
 				case 2: return DECODE_000_SUBI(p, op, 2);
 				case 3:
-					ex = *p++;
+					p = READWORD(p, &ex);
 					if (BIT(ex, 11))
-						return DECODE_020_CHK2(p, op, ex, 2);
-					return DECODE_020_CMP2(p, op, ex, 2);
+						return DECODE_020_CMP2(p, op, ex, 2);
+					return DECODE_020_CHK2(p, op, ex, 2);
 			}
 			
 		case 3: // ADDI, ADDIW.L
@@ -1313,7 +1383,8 @@ APTR LINE_0(APTR p) {
 				return DECODE_020_CAS(p, op, 2);
 			}
 			
-			ex = *p++;
+			p = READWORD(p, &ex);
+			
 			if (BIT(ex, 4)) {
 				switch (DOWNTO(ex, 3, 0)) {
 					case 0: return DECODE_080_MOVEX(p, op, ex);
@@ -1341,36 +1412,38 @@ APTR LINE_0(APTR p) {
 	
 	return p;
 }
-APTR LINE_1(APTR p) {
-	UINT16 op = *p++;
+APTR DECODE_LINE_1(APTR p, UINT16 op) {
+	
 	// MOVE.L Bn,<ea>
 	if (DOWNTO(op, 5, 3) == 1)
 		return DECODE_080_MOVE(p, op, 1);
+	
 	// MOVE.L <ea>,Bn
 	if (DOWNTO(op, 8, 6) == 1)
 		return DECODE_080_MOVE(p, op, 0);
+	
 	// MOVE.B  <ea>,<ea>
 	return DECODE_000_MOVE(p, op, 0);      
 }
-APTR LINE_2(APTR p) {
-	UINT16 op = *p++;
+APTR DECODE_LINE_2(APTR p, UINT16 op) {
+	
 	// MOVEA.L <ea>,An
 	if (DOWNTO(op, 8, 6) == 1)
 		return DECODE_000_MOVEA(p, op, 2);
+	
 	// MOVE.L  <ea>,<ea>
 	return DECODE_000_MOVE(p, op, 2);
 }
-APTR LINE_3(APTR p) {
-	UINT16 op = *p++;
+APTR DECODE_LINE_3(APTR p, UINT16 op) {
+	
 	// MOVEA.W <ea>,An
 	if (DOWNTO(op, 8, 6) == 1)
 		return DECODE_000_MOVEA(p, op, 1);
+	
 	// MOVE.W  <ea>,<ea>
 	return DECODE_000_MOVE(p, op, 1);
 }
-APTR LINE_4(APTR p) {
-	
-	UINT16 op = *p++;
+APTR DECODE_LINE_4(APTR p, UINT16 op) {
 	
 	switch (BIT(op, 8)) {
 		case 0:
@@ -1508,9 +1581,7 @@ APTR LINE_4(APTR p) {
 	
 	return p;
 }
-APTR LINE_5(APTR p) {
-	
-	UINT16 op = *p++;
+APTR DECODE_LINE_5(APTR p, UINT16 op) {
 	
 	switch (DOWNTO(op, 7, 6)) {
 		case 0:
@@ -1546,17 +1617,16 @@ APTR LINE_5(APTR p) {
 	
 	return p;
 }
-APTR LINE_6(APTR p) {
-	UINT16 op = *p++;
+APTR DECODE_LINE_6(APTR p, UINT16 op) {
+	
 	switch (DOWNTO(op, 11, 8)) {
 		case 0: return DECODE_000_BRA(p, op);
 		case 1: return DECODE_000_BSR(p, op);
 	}
+	
 	return DECODE_000_BCC(p, op);
 }
-APTR LINE_7(APTR p) {
-	
-	UINT16 op = *p++;
+APTR DECODE_LINE_7(APTR p, UINT16 op) {
 	
 	if (BIT(op, 8)) {
 		switch (DOWNTO(op, 7, 6)) {
@@ -1579,9 +1649,7 @@ APTR LINE_7(APTR p) {
 	
 	return DECODE_000_MOVEQ(p, op);
 }
-APTR LINE_8(APTR p) {
-	
-	UINT16 op = *p++;
+APTR DECODE_LINE_8(APTR p, UINT16 op) {
 	
 	switch (DOWNTO(op, 8, 6)) {
 		case 0: return DECODE_000_OR(p, op, 0, 0);
@@ -1589,16 +1657,14 @@ APTR LINE_8(APTR p) {
 		case 2: return DECODE_000_OR(p, op, 2, 0);
 		case 3: return DECODE_000_DIVU(p, op);
 		case 4: return DOWNTO(op, 5, 4) ? DECODE_000_OR(p, op, 0, 1) : DECODE_000_SBCD(p, op);
-		case 5: return DOWNTO(op, 5, 4) ? DECODE_000_OR(p, op, 1, 1) : DECODE_020_PACK(p, op);
-		case 6: return DOWNTO(op, 5, 4) ? DECODE_000_OR(p, op, 2, 1) : DECODE_020_UNPK(p, op);
+		case 5: return DOWNTO(op, 5, 4) ? DECODE_000_OR(p, op, 1, 1) : DECODE_020_PACK_UNPK(p, op, 0);
+		case 6: return DOWNTO(op, 5, 4) ? DECODE_000_OR(p, op, 2, 1) : DECODE_020_PACK_UNPK(p, op, 1);
 		case 7: return DECODE_000_DIVS(p, op);
 	}
 	
 	return p;
 }
-APTR LINE_9(APTR p) {
-	
-	UINT16 op = *p++;
+APTR DECODE_LINE_9(APTR p, UINT16 op) {
 	
 	switch (DOWNTO(op, 8, 6)) {
 		case 0: return DECODE_000_SUB (p, op, 0, 0);
@@ -1629,16 +1695,12 @@ APTR LINE_9(APTR p) {
 	
 	return p;
 }
-APTR LINE_A(APTR p) {
+APTR DECODE_LINE_A(APTR p, UINT16 op) {
 	
-	UINT16 op = *p++;
-	printf("ATRAP   #$%04x\n", op);
-	
+	OUT("ATRAP   #$%04x", op);
 	return p;
 }
-APTR LINE_B(APTR p) {
-	
-	UINT16 op = *p++;
+APTR DECODE_LINE_B(APTR p, UINT16 op) {
 	
 	switch (DOWNTO(op, 8, 6)) {
 		case 0: return DECODE_000_CMP (p, op, 0);
@@ -1653,9 +1715,7 @@ APTR LINE_B(APTR p) {
 	
 	return p;
 }
-APTR LINE_C(APTR p) {
-	
-	UINT16 op = *p++;
+APTR DECODE_LINE_C(APTR p, UINT16 op) {
 	
 	switch (DOWNTO(op, 8, 6)) {
 		case 0: return DECODE_000_AND (p, op, 0, 0);
@@ -1686,9 +1746,7 @@ APTR LINE_C(APTR p) {
 	
 	return p;
 }
-APTR LINE_D(APTR p) {
-	
-	UINT16 op = *p++;
+APTR DECODE_LINE_D(APTR p, UINT16 op) {
 	
 	switch (DOWNTO(op, 8, 6)) {
 		case 0: return DECODE_000_ADD (p, op, 0, 0);
@@ -1719,9 +1777,7 @@ APTR LINE_D(APTR p) {
 	
 	return p;
 }
-APTR LINE_E(APTR p) {
-	
-	UINT16 op = *p++;
+APTR DECODE_LINE_E(APTR p, UINT16 op) {
 	
 	if (BIT(op, 11)) {
 		switch ((DOWNTO(op, 8, 6))) {
@@ -1744,55 +1800,55 @@ APTR LINE_E(APTR p) {
 	
 	return DECODE_000_SHIFT(p, op);
 }
-APTR LINE_F(APTR p) {
-	
-	UINT16 op = *p++;
+APTR DECODE_LINE_F(APTR p, UINT16 op) {
 	
 	switch (DOWNTO(op, 11, 9)) {
-		case 0: printf("DC.w    $%04x  ; illegal opcode\n", op); break;
-		case 1: printf("DC.w    $%04x  ; illegal opcode\n", op); break;
-		case 2: printf("DC.w    $%04x  ; illegal opcode\n", op); break;
+		case 0: OUT("DC.w    $%04x", op); break;
+		case 1: OUT("DC.w    $%04x", op); break;
+		case 2: OUT("DC.w    $%04x", op); break;
 		case 3: return DECODE_040_MOVE16(p, op);
-		case 4: printf("DC.w    $%04x  ; illegal opcode\n", op); break;
-		case 5: printf("DC.w    $%04x  ; illegal opcode\n", op); break;
-		case 6: printf("DC.w    $%04x  ; illegal opcode\n", op); break;
-		case 7: printf("DC.w    $%04x  ; illegal opcode\n", op); break;
+		case 4: OUT("DC.w    $%04x", op); break;
+		case 5: OUT("DC.w    $%04x", op); break;
+		case 6: OUT("DC.w    $%04x", op); break;
+		case 7: OUT("DC.w    $%04x", op); break;
 	}
 	
 	return p;
 }
 
-int DECODE(APTR mem, int size) {
+int DECODE(APTR p, int max) {
 	
-	APTR p = mem;
+	APTR addr;
+	UINT16 op;
 	int count = 0;
 	
-	while ( size > ( p - mem ) ) {
-		
-		printf("%08x : %04x    ", p, *p);
-		
-		switch (DOWNTO(*p, 15, 12)) {
-			case 0x0: p = LINE_0(p); break;
-			case 0x1: p = LINE_1(p); break;
-			case 0x2: p = LINE_2(p); break;
-			case 0x3: p = LINE_3(p); break;
-			case 0x4: p = LINE_4(p); break;
-			case 0x5: p = LINE_5(p); break;
-			case 0x6: p = LINE_6(p); break;
-			case 0x7: p = LINE_7(p); break;
-			case 0x8: p = LINE_8(p); break;
-			case 0x9: p = LINE_9(p); break;
-			case 0xA: p = LINE_A(p); break;
-			case 0xB: p = LINE_B(p); break;
-			case 0xC: p = LINE_C(p); break;
-			case 0xD: p = LINE_D(p); break;
-			case 0xE: p = LINE_E(p); break;
-			case 0xF: p = LINE_F(p); break;
+	while (count < max) {
+		addr = p;
+		buff = &buf[0];
+		p = READWORD(p, &op);
+		switch (DOWNTO(op, 15, 12)) {
+			case 0x0: p = DECODE_LINE_0(p, op); break;
+			case 0x1: p = DECODE_LINE_1(p, op); break;
+			case 0x2: p = DECODE_LINE_2(p, op); break;
+			case 0x3: p = DECODE_LINE_3(p, op); break;
+			case 0x4: p = DECODE_LINE_4(p, op); break;
+			case 0x5: p = DECODE_LINE_5(p, op); break;
+			case 0x6: p = DECODE_LINE_6(p, op); break;
+			case 0x7: p = DECODE_LINE_7(p, op); break;
+			case 0x8: p = DECODE_LINE_8(p, op); break;
+			case 0x9: p = DECODE_LINE_9(p, op); break;
+			case 0xA: p = DECODE_LINE_A(p, op); break;
+			case 0xB: p = DECODE_LINE_B(p, op); break;
+			case 0xC: p = DECODE_LINE_C(p, op); break;
+			case 0xD: p = DECODE_LINE_D(p, op); break;
+			case 0xE: p = DECODE_LINE_E(p, op); break;
+			case 0xF: p = DECODE_LINE_F(p, op); break;
 		}
-		
-		count++;
+		printf("%08x :  %-30s  %-40s ; %i\n", addr, dump, buf, p - addr);
+		sprintf(dump, ""); // Reset Opcodes-HexDump
+		wordcount = 0;     // Reset Word count
+		count++;           // Increment Instruction count
 	}
-	
 	return count;
 }
 
@@ -1802,27 +1858,55 @@ int DECODE(APTR mem, int size) {
 
 int main(int argc, char *argv[]) {
 	
-	if (argc > 1)
-	{
-		return DECODE((APTR)strtol(argv[1], NULL, 16), 80);
+	int count = 0;
+	
+	UINT16 sample[100] = {
+		0x4cdf,0x7cfc,
+		0x3228,0x001c,
+		0x690f,
+		0x69f0,
+		0xe000,
+		0x1401,
+		0x3040,
+		0x2618,
+		0x2221,
+		0x4e75,
+		0x8127,
+		0x4cdf,0x7cfc,
+		0x3228,0x001c,
+		0xe000,
+		0x1401,
+		0x3040,
+		0x2618,
+		0x2221,
+		0x4e75,
+		0x8127,
+		0xffff,0xffff
+	};
+	
+	switch (argc) {
+		case 1: 
+			// SAMPLE TEST
+			count = DECODE(sample, 20);
+			break;
+		case 2:
+			// ADDRESS [DEFAULT SIZE]
+			count = DECODE((APTR)strtol(argv[1], NULL, 16), 30);
+			break;
+		default:
+			// ADDRESS SIZE
+			count = DECODE((APTR)strtol(argv[1], NULL, 16), strtol(argv[2], NULL, 10));
+			break;
 	}
-	else
-	{
-		UINT16 p2[100] = {
-			0x4cdf,0x7cfc,
-			0x3228,0x001c,
-			0xe000,
-			0x1401,
-			0x3040,
-			0x2618,
-			0x2221,
-			0x4e75,
-			0x8127,
-			0xffff,0xffff
-		};
-		
-		return DECODE(p2, 32);
-	}
+	
+	
+	/*
+	foo("toto\n");
+	foo("a:%i,b:%i,c:%i\n", 1, 2, 3);
+	foo("%i,%i,%i,%i,%i\n", 1, 2, 3, 4, 5);
+	*/
+	
+	return count;
  }
 
 /************************************************************************************
