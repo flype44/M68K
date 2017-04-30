@@ -1,7 +1,8 @@
 ;==============================================================================
-; Program: BatTest1.asm
-; Short:   Initialize a SAGA Planar Screen
-; Requir:  Vampire with core V3_PLANAR_xx.jic
+; Program: BatTest2.asm
+; Short:   Test the chipset planars and copper
+; Requir:  Vampire with core V3_PLANAR_xx.jic or better
+; Author:  APOLLO-Team, flype. 2017-April
 ;==============================================================================
 
     INCLUDE dos/dos.i
@@ -73,7 +74,7 @@ MAIN:
 
 .openint
     lea       _INTNAME,a1                  ; Open Intuition
-    move.l    #0,d0                        ; 
+    move.l    #0,d0                  Â      ; 
     CALLEXEC  OpenLibrary                  ; 
     tst.l     d0                           ; 
     beq       .closedos                    ; Exit on error
