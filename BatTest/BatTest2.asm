@@ -88,17 +88,6 @@ MAIN:
     beq       .closeint                    ; Exit on error
     move.l    d0,_GfxBase                  ; 
 
-.fill
-    lea       _USERPLANE2,a0               ; Load empty plane 2
-    move.l    #HEIGHT/2,d0                   ; Number of rows
-.fillY
-    move.l    #WIDTH/4,d1                  ; Number of pixs/row
-.fillX
-;   move.w    #%0001000100010001,(a0)+     ; Draw pixels
-    dbf       d1,.fillX                    ; Continue X
-    add.l     #BYTESPERROW*2,a0            ; 
-    dbf       d0,.fillY                    ; Continue Y
-
 .init
     move.w    DMACONR,d0                   ; Store DMACON
     or.w      #$8000,d0                    ; 
