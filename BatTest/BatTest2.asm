@@ -101,7 +101,6 @@ MAIN:
 .setdepth
     lea       CN0,a0                       ; Load Copper BPLCON0
     move.w    #DEPTH*$1000,2(a0)           ; Update Depth
-;    move.w    #$0010,2(a0)                 ; Update Depth
 
 .setprites
     lea       _USERSPRITE1,a0              ; Load Bitmap
