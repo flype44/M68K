@@ -23,30 +23,14 @@
 ;==============================================================================
 
 CIAAPRA       EQU $bfe001
-
 DMACONR       EQU $dff002
 ADKCONR       EQU $dff010
 INTENAR       EQU $dff01c
 INTREQR       EQU $dff01e
-
 DMACON        EQU $dff096
 ADKCON        EQU $dff09e
 INTENA        EQU $dff09a
 INTREQ        EQU $dff09c
-
-BLTCON0       EQU $dff040
-BLTCON1       EQU $dff042
-BLTAFWM       EQU $dff044
-BLTALWM       EQU $dff046
-BLTCPTH       EQU $dff048
-BLTBPTH       EQU $dff04C
-BLTAPTH       EQU $dff050
-BLTDPTH       EQU $dff054
-BLTSIZE       EQU $dff058
-BLTBMOD       EQU $dff062
-BLTCMOD       EQU $dff060
-BLTAMOD       EQU $dff064
-BLTDMOD       EQU $dff066
 COP1LC        EQU $dff080
 
 ;==============================================================================
