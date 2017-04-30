@@ -370,7 +370,6 @@ P8L dc.w      $00fe,$0000   ; BPL8PTL
     dc.w      $9e01,$fffe,$0180,$0003
     dc.w      $9f01,$fffe,$0180,$0000
     ;
-    dc.w      $01fc,$0002   ; FMODE
     dc.w      $ffff,$fffe   ; WAIT
     dc.w      $ffff,$fffe   ; WAIT
 
