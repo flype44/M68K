@@ -117,7 +117,6 @@ MAIN:
 .setdepth
     lea       CN0,a0                       ; Load Copper BPLCON0
     move.w    #DEPTH*$1000,2(a0)           ; Update Depth
-;    move.w    #$0010,2(a0)                 ; Update Depth
 
 .setcopper
     lea       _USERCOPPER,a0               ; Set Copperlist
@@ -304,7 +303,7 @@ P7L dc.w      $00fa,$0000   ; BPL7PTR low
 P8H dc.w      $00fc,$0000   ; BPL8PTR high
 P8L dc.w      $00fe,$0000   ; BPL8PTR low
     
-    dc.w      $7001,$fffe,$0180,$0300
+    dc.w      $7001,$fffe,$0180,$0300 ; copperbar red
     dc.w      $7101,$fffe,$0180,$0600
     dc.w      $7201,$fffe,$0180,$0900
     dc.w      $7301,$fffe,$0180,$0b00
@@ -317,7 +316,7 @@ P8L dc.w      $00fe,$0000   ; BPL8PTR low
     dc.w      $7e01,$fffe,$0180,$0300
     dc.w      $7f01,$fffe,$0180,$0000
 
-    dc.w      $8001,$fffe,$0180,$0333
+    dc.w      $8001,$fffe,$0180,$0333 ; copperbar grey
     dc.w      $8101,$fffe,$0180,$0666
     dc.w      $8201,$fffe,$0180,$0999
     dc.w      $8301,$fffe,$0180,$0bbb
@@ -330,7 +329,7 @@ P8L dc.w      $00fe,$0000   ; BPL8PTR low
     dc.w      $8e01,$fffe,$0180,$0333
     dc.w      $8f01,$fffe,$0180,$0000
     
-    dc.w      $9001,$fffe,$0180,$0003
+    dc.w      $9001,$fffe,$0180,$0003 ; copperbar blue
     dc.w      $9101,$fffe,$0180,$0006
     dc.w      $9201,$fffe,$0180,$0009
     dc.w      $9301,$fffe,$0180,$000b
@@ -350,7 +349,6 @@ P8L dc.w      $00fe,$0000   ; BPL8PTR low
 _USERPLANE1:
     incbin    PLANAR320x256_Bat.raw
     incbin    ApolloTeamRulez_1bit.raw
-;   incbin    PLANAR320x256_Bat.raw
     incbin    PLANAR320x256_Bat.raw
 
     EVEN
