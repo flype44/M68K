@@ -4,7 +4,7 @@
  ** Date:    2017-may
  ** Short:   Play sound on a given channel.
  ** Purpose: Test PAMELA logic implementation.
- ** Authors: (C) APOLLO-Team 2017 (Gunnar,Claude,Henryk,Philippe)
+ ** Authors: (C) APOLLO-Team 2017 (HW:Gunnar,Henryk,Claude) (SW:Flype)
  ** Compile: >gcc   PlayPam.c -o PlayPam
  **          >strip PlayPam
  *********************************************************************/
