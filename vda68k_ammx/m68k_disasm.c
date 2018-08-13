@@ -1,7 +1,7 @@
-/* $VER: m68k_disasm.c V0.6 (05.10.2008)
+/* $VER: m68k_disasm.c V0.7 (12.08.2018)
  *
  * Disassembler module for the M680x0 microprocessor family
- * Copyright (c) 1999-2008  Frank Wille
+ * Copyright (c) 1999-2018  Frank Wille
  * Based on NetBSD's m68k/m68k/db_disasm.c by Christian E. Hopps.
  *
  * Copyright (c) 1994 Christian E. Hopps
@@ -33,6 +33,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *
+ * v0.7  (12.08.2018) flype
+ *       Added AC68080 AMMX support.
  * v0.6  (05.10.2008) phx
  *       Improved support for LE and RISC architectures.
  * v0.5  (11.07.2004) phx
@@ -87,6 +89,7 @@ void get_fpustdGEN (dis_buffer_t *, ushort, const char *);
 void addstr (dis_buffer_t *, const char *s);
 void prints (dis_buffer_t *, int, int);
 void printu (dis_buffer_t *, uint, int);
+void printq (dis_buffer_t *, ulonglong);
 void prints_wb (dis_buffer_t *, int, int, int);
 void printu_wb (dis_buffer_t *, uint, int, int);
 void prints_bf (dis_buffer_t *, int, int, int);
@@ -125,6 +128,7 @@ void opcode_fpu (dis_buffer_t *, ushort);
 void opcode_mmu (dis_buffer_t *, ushort);
 void opcode_mmu040 (dis_buffer_t *, ushort);
 void opcode_move16 (dis_buffer_t *, ushort);
+void opcode_ammx (dis_buffer_t *, ushort);
 
 /* subs of groups */
 void opcode_movec (dis_buffer_t *, ushort);
@@ -133,6 +137,16 @@ void opcode_movem (dis_buffer_t *, ushort);
 void opcode_fmove_ext (dis_buffer_t *, ushort, ushort);
 void opcode_pmove (dis_buffer_t *, ushort, ushort);
 void opcode_pflush (dis_buffer_t *, ushort, ushort);
+
+/* subs of ammx */
+void opcode_ammx_rega1 (dis_buffer_t *, ushort);
+void opcode_ammx_rega2 (dis_buffer_t *, ushort);
+void opcode_ammx_regb1 (dis_buffer_t *, ushort);
+void opcode_ammx_regb2 (dis_buffer_t *, ushort);
+void opcode_ammx_regd1 (dis_buffer_t *, ushort);
+void opcode_ammx_regd2 (dis_buffer_t *, ushort);
+void opcode_ammx_vperm (dis_buffer_t *, ushort);
+
 
 #define addchar(ch) (*dbuf->casm++ = ch)
 #define iaddchar(ch) (*dbuf->cinfo++ = ch)
@@ -165,17 +179,179 @@ const char *const mmcc_table[16] = {
   "ws", "wc", "is", "ic", "gs", "gc", "cs", "cc"
 };
 
-const char *const aregs[8] = {
-  "a0","a1","a2","a3","a4","a5","a6","sp"
+const char *const aregs[8*2] = {
+  "a0","a1","a2","a3","a4","a5","a6","sp",
+  "b0","b1","b2","b3","b4","b5","b6","b7"
 };
-const char *const dregs[8] = {
-  "d0","d1","d2","d3","d4","d5","d6","d7"
+const char *const dregs[8*4] = {
+  "d0","d1","d2","d3","d4","d5","d6","d7",
+  "e0","e1","e2","e3","e4","e5","e6","e7",
+  "e8","e9","e10","e11","e12","e13","e14","e15",
+  "e16","e17","e18","e19","e20","e21","e22","e23"
 };
 const char *const fpregs[8] = {
   "fp0","fp1","fp2","fp3","fp4","fp5","fp6","fp7"
 };
 const char *const fpcregs[3] = {
   "fpiar", "fpsr", "fpcr"
+};
+
+/* subs of ammx */
+
+#define AMMX_00  0
+#define AMMX_08  1
+#define AMMX_12  2
+
+#define AMMX_IGNORE 0
+#define AMMX_REGA1  1
+#define AMMX_REGA2  2
+#define AMMX_REGB1  3
+#define AMMX_REGB2  4
+#define AMMX_REGD1  5
+#define AMMX_REGD2  6
+
+const char *const ammx_opcode[128][2] = {
+	{ "AMMX"      , ""          },   // 0 0 0 0 0 0
+	{ "LOAD"      , "LOADi"     },   // 0 0 0 0 0 1
+	{ "TRANSHi"   , "TRANSiHi"  },   // 0 0 0 0 1 0
+	{ "TRANSLo"   , "TRANSiLo"  },   // 0 0 0 0 1 1
+	{ "STORE"     , "STOREi"    },   // 0 0 0 1 0 0
+	{ "STOREM"    , ""          },   // 0 0 0 1 0 1
+	{ "PACKUSWB"  , ""          },   // 0 0 0 1 1 0
+	{ "PACKPIX"   , ""          },   // 0 0 0 1 1 1
+	{ "PAND"      , ""          },   // 0 0 1 0 0 0
+	{ "POR"       , ""          },   // 0 0 1 0 0 1
+	{ "PEOR"      , ""          },   // 0 0 1 0 1 0
+	{ "PANDN"     , ""          },   // 0 0 1 0 1 1
+	{ "PAVG.b"    , ""          },   // 0 0 1 1 0 0
+	{ "AMMX"      , ""          },   // 0 0 1 1 0 1
+	{ "PABS.b"    , ""          },   // 0 0 1 1 1 0
+	{ "PABS.w"    , ""          },   // 0 0 1 1 1 1
+	{ "PADD.b"    , ""          },   // 0 1 0 0 0 0
+	{ "PADD.w"    , ""          },   // 0 1 0 0 0 1
+	{ "PSUB.b"    , ""          },   // 0 1 0 0 1 0
+	{ "PSUB.w"    , ""          },   // 0 1 0 0 1 1
+	{ "PADDus.b"  , ""          },   // 0 1 0 1 0 0
+	{ "PADDss.w"  , ""          },   // 0 1 0 1 0 1
+	{ "PSUBus.b"  , ""          },   // 0 1 0 1 1 0
+	{ "PSUBss.w"  , ""          },   // 0 1 0 1 1 1
+	{ "PMUL88"    , ""          },   // 0 1 1 0 0 0
+	{ "MULA"      , ""          },   // 0 1 1 0 0 1
+	{ "MULHW"     , ""          },   // 0 1 1 0 1 0
+	{ "MULLW"     , ""          },   // 0 1 1 0 1 1
+	{ "BFLY.b"    , ""          },   // 0 1 1 1 0 0
+	{ "BFLY.w"    , ""          },   // 0 1 1 1 0 1
+	{ "UNPACKPIX" , ""          },   // 0 1 1 1 1 0
+	{ "AMMX"      , ""          },   // 0 1 1 1 1 1
+	{ "PCMPeq.b"  , ""          },   // 1 0 0 0 0 0
+	{ "PCMPeq.w"  , ""          },   // 1 0 0 0 0 1
+	{ "PCMPhi.b"  , ""          },   // 1 0 0 0 1 0
+	{ "PCMPhi.w"  , ""          },   // 1 0 0 0 1 1
+	{ "STOREC"    , ""          },   // 1 0 0 1 0 0
+	{ "STOREM2"   , ""          },   // 1 0 0 1 0 1
+	{ "STOREM3"   , ""          },   // 1 0 0 1 1 0
+	{ "AMMX"      , ""          },   // 1 0 0 1 1 1
+	{ "C2P"       , ""          },   // 1 0 1 0 0 0
+	{ "BSEL"      , ""          },   // 1 0 1 0 0 1
+	{ "MINTERM"   , ""          },   // 1 0 1 0 1 0
+	{ "PIXMRG"    , ""          },   // 1 0 1 0 1 1
+	{ "PCMPge.b"  , ""          },   // 1 0 1 1 0 0
+	{ "PCMPge.w"  , ""          },   // 1 0 1 1 0 1
+	{ "PCMPgt.b"  , ""          },   // 1 0 1 1 1 0
+	{ "PCMPgt.w"  , ""          },   // 1 0 1 1 1 1
+	{ "PMINs.b"   , ""          },   // 1 1 0 0 0 0
+	{ "PMINs.w"   , ""          },   // 1 1 0 0 0 1
+	{ "PMINu.b"   , ""          },   // 1 1 0 0 1 0
+	{ "PMINu.w"   , ""          },   // 1 1 0 0 1 1
+	{ "PMAXs.b"   , ""          },   // 1 1 0 1 0 0
+	{ "PMAXs.w"   , ""          },   // 1 1 0 1 0 1
+	{ "PMAXu.b"   , ""          },   // 1 1 0 1 1 0
+	{ "PMAXu.w"   , ""          },   // 1 1 0 1 1 1
+	{ "LSR.q"     , ""          },   // 1 1 1 0 0 0
+	{ "LSL.q"     , ""          },   // 1 1 1 0 0 1
+	{ "AMMX"      , ""          },   // 1 1 1 0 1 0
+	{ "DTX"       , ""          },   // 1 1 1 0 1 1
+	{ "AMMX"      , ""          },   // 1 1 1 1 0 0
+	{ "AMMX"      , ""          },   // 1 1 1 1 0 1
+	{ "LEA3D"     , ""          },   // 1 1 1 1 1 0
+	{ "AMMX"      , ""          },   // 1 1 1 1 1 1
+};
+
+const int ammx_opdef[128][4] = {
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // AMMX     
+	{ AMMX_12, AMMX_REGA1, AMMX_REGD1, AMMX_IGNORE },  // LOAD     
+	{ AMMX_12, AMMX_REGA2, AMMX_REGD2, AMMX_IGNORE },  // TRANS-Hi 
+	{ AMMX_12, AMMX_REGA2, AMMX_REGD2, AMMX_IGNORE },  // TRANS-Lo 
+	{ AMMX_08, AMMX_REGB1, AMMX_REGA1, AMMX_IGNORE },  // STORE    
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // STOREM   
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // PACKUSWB 
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // PACKPIX  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PAND     
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // POR      
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PEOR     
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PANDN    
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PAVG.b   
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // AMMX     
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PABS.b   
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PABS.w   
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PADD.b   
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PADD.w   
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PSUB.b   
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PSUB.w   
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PADDus.b 
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PADDss.w 
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PSUBus.b 
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PSUBss.w 
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PMUL88   
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // MULA     
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // MULHW    
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // MULLW    
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // BFLY.b   
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // BFLY.w   
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // UNPACKPIX
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // AMMX     
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // PCMPeq.b 
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // PCMPeq.w 
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // PCMPhi.b 
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // PCMPhi.w 
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // STOREC   
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // STOREM2  
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // STOREM3  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // AMMX     
+	{ AMMX_00, AMMX_REGA1, AMMX_REGD1, AMMX_IGNORE },  // C2P      
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // BSEL     
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // MINTERM  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PIXMRG   
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // PCMPge.b 
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // PCMPge.w 
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // PCMPgt.b 
+	{ AMMX_00, AMMX_REGB1, AMMX_REGD1, AMMX_REGA1  },  // PCMPgt.w 
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PMINs.b  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PMINs.w  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PMINu.b  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PMINu.w  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PMAXs.b  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PMAXs.w  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PMAXu.b  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // PMAXu.w  
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // LSR.q    
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // LSL.q    
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // AMMX     
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // DTX      
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // AMMX     
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // AMMX     
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  },  // LEA3D    
+	{ AMMX_00, AMMX_REGA1, AMMX_REGB1, AMMX_REGD1  }   // AMMX     
+};
+
+dis_func_t *const ammx_opreg[8] = {
+	NULL,                // AMMX_IGNORE
+	opcode_ammx_rega1,   // AMMX_REGA1
+	opcode_ammx_rega2,   // AMMX_REGA2
+	opcode_ammx_regb1,   // AMMX_REGB1
+	opcode_ammx_regb2,   // AMMX_REGB2
+	opcode_ammx_regd1,   // AMMX_REGD1
+	opcode_ammx_regd2,   // AMMX_REGD2
 };
 
 
@@ -207,6 +383,12 @@ static long read32s(ushort *p)
 {
   return (long)((ulong)*(uchar *)p)<<24 | ((ulong)*((uchar *)p+1))<<16 |
                 ((ulong)*((uchar *)p+2))<<8 | (ulong)*((uchar *)p+3);
+}
+
+
+static ulonglong read64(ushort *p)
+{
+  return ( ( read32s( p ) << 32 ) + ( read32s( p + 2 ) ) );
 }
 
 
@@ -1398,7 +1580,10 @@ void opcode_coproc(dis_buffer_t *dbuf, ushort opc)
   case 3:
     opcode_move16(dbuf, opc);
     return;
-  }
+  case 7:
+    opcode_ammx(dbuf, opc);
+    return;
+  }  
   switch (BITFIELD(opc,8,6)) {
   case 0:
     dbuf->used++;
@@ -2424,6 +2609,363 @@ void opcode_move16(dis_buffer_t *dbuf, ushort opc)
 
 
 /*
+ * disassemble ammx opcode.
+ */
+void opcode_ammx_ea_d8(dis_buffer_t *dbuf, ushort opc)
+{
+	short eaext = read16( dbuf->val + 2 );
+	char  disp8 = BITFIELD( eaext, 7, 0 );
+	
+	prints ( dbuf, disp8, SIZE_BYTE );
+	addchar( '.' );
+	addchar( 'b' );
+	addchar( ',' );
+	dbuf->used++;
+}
+void opcode_ammx_ea_bd(dis_buffer_t *dbuf, ushort opc)
+{
+	short eaext = read16( dbuf->val + 2 );
+	short disp16;
+	int   disp32;
+	
+	// Base Displacement Size
+	switch( BITFIELD( eaext, 5, 4 ) )
+	{
+		case 0b00: // Reserved
+		case 0b01: // Null
+			break;
+		case 0b10: // Word
+			disp16 = read16s( dbuf->val + 3 );
+			prints ( dbuf, disp16, SIZE_LONG );
+			addchar( '.' );
+			addchar( 'w' );
+			addchar( ',' );
+			dbuf->used += 2;
+			break;
+		case 0b11: // Long
+			disp32 = read32s( dbuf->val + 3 );
+			prints ( dbuf, disp32, SIZE_LONG );
+			addchar( '.' );
+			addchar( 'l' );
+			addchar( ',' );
+			dbuf->used += 3;
+			break;
+	}
+}
+void opcode_ammx_ea_an(dis_buffer_t *dbuf, ushort opc)
+{
+	unsigned int bita = ISBITSET( opc, 8 );
+	unsigned int rega = BITFIELD( opc, 2, 0 );
+	
+	addstr ( dbuf, aregs[ rega + ( bita ? 8 : 0 ) ] );
+	addchar( ',' );	
+}
+void opcode_ammx_ea_pc(dis_buffer_t *dbuf, ushort opc)
+{
+	addchar( 'P' );	
+	addchar( 'C' );	
+	addchar( ',' );	
+}
+void opcode_ammx_ea_xn(dis_buffer_t *dbuf, ushort opc)
+{
+	short eaext = read16( dbuf->val + 2 );
+	unsigned int regx = BITFIELD( eaext, 14, 12 );
+	
+	addstr ( dbuf, ISBITSET( eaext, 15 ) ? aregs[ regx ] : dregs[ regx ] );
+	addchar( '.' );
+	addchar( ISBITSET( eaext, 11 ) ? 'l' : 'w' );
+	addchar( '*' );
+	
+	switch( BITFIELD( eaext, 10, 9 ) )
+	{
+		case 0b00: addchar( '1' ); break;
+		case 0b01: addchar( '2' ); break;
+		case 0b10: addchar( '4' ); break;
+		case 0b11: addchar( '8' ); break;
+	}	
+}
+void opcode_ammx_ea_od(dis_buffer_t *dbuf, ushort opc)
+{
+	short eaext = read16( dbuf->val + 2 );
+	short disp16;
+	int   disp32;
+	
+	switch( BITFIELD( eaext, 1, 0 ) )
+	{
+		case 0b00: // None
+			break;
+		case 0b01: // Null
+			addchar( ',' );
+			addchar( '0' );
+			break;
+		case 0b10: // Word
+			addchar( ',' );
+			disp16 = read16s( dbuf->val + 3 );
+			prints ( dbuf, disp16, SIZE_WORD );
+			addchar( '.' );
+			addchar( 'w' );
+			dbuf->used += 1;
+			break;
+		case 0b11: // Long
+			addchar( ',' );
+			disp32 = read32s( dbuf->val + 3 );
+			prints ( dbuf, disp32, SIZE_LONG );
+			addchar( '.' );
+			addchar( 'l' );
+			dbuf->used += 2;
+			break;
+	}
+}
+
+void opcode_ammx_rega1(dis_buffer_t *dbuf, ushort opc)
+{
+	short eaext, disp16;
+	unsigned int bita = ISBITSET( opc, 8 );
+	unsigned int moda = BITFIELD( opc, 5, 3 );
+	unsigned int rega = BITFIELD( opc, 2, 0 );
+
+	// Parse <VEA>
+
+	switch( moda )
+	{
+		case 0b000: // D0+n, E8+n
+			addstr( dbuf, dregs[ rega + ( bita ? 16 : 0 ) ] );
+			break;
+		case 0b001: // E0+n, E16+n
+			addstr( dbuf, dregs[ rega + ( bita ? 24 : 8 ) ] );
+			break;
+		case 0b010: // (An), (Bn)
+			addchar( '(' );
+			addstr ( dbuf, aregs[ rega + ( bita ? 8 : 0 ) ] );
+			addchar( ')' );
+			break;
+		case 0b011: // (An)+, (Bn)+
+			addchar( '(' );
+			addstr ( dbuf, aregs[ rega + ( bita ? 8 : 0 ) ] );
+			addchar( ')' );
+			addchar( '+' );
+			break;
+		case 0b100: // -(An), -(Bn)
+			addchar( '-' );
+			addchar( '(' );
+			addstr ( dbuf, aregs[ rega + ( bita ? 8 : 0 ) ] );
+			addchar( ')' );
+			break;
+		case 0b101: // (d16,An), (d16,Bn) 
+			disp16 = read16s( dbuf->val + 2 );
+			addchar( '(' );
+			prints ( dbuf, (int)disp16, SIZE_WORD );
+			addchar( '.' );
+			addchar( 'w' );
+			addchar( ',' );
+			addstr ( dbuf, aregs[ rega + ( bita ? 8 : 0 ) ] );
+			addchar( ')' );
+			dbuf->used++;
+			break;
+		case 0b110: // (bd,An,Xn,od), (bd,Bn,Xn,od)
+			eaext = read16( dbuf->val + 2 );
+			addchar( '(' );
+			if( ISBITSET( eaext, 8 ) )
+			{
+				opcode_ammx_ea_bd( dbuf, opc );
+				opcode_ammx_ea_an( dbuf, opc );
+				opcode_ammx_ea_xn( dbuf, opc );
+				opcode_ammx_ea_od( dbuf, opc );
+			}
+			else
+			{
+				opcode_ammx_ea_d8( dbuf, opc );
+				opcode_ammx_ea_an( dbuf, opc );
+				opcode_ammx_ea_xn( dbuf, opc );
+			}
+			addchar( ')' );
+			break;
+		case 0b111:
+			switch( rega )
+			{
+				case 0b000: // (xxx).W
+					printu ( dbuf, read16( dbuf->val + 2 ), SIZE_WORD );
+					addchar( '.' );
+					addchar( 'w' );
+					dbuf->used++;
+					break;
+				case 0b001: // (xxx).L
+					printu ( dbuf, read32( dbuf->val + 2 ), SIZE_LONG );
+					addchar( '.' );
+					addchar( 'l' );
+					dbuf->used++;
+					dbuf->used++;
+					break;
+				case 0b010: // (d16,PC)
+					disp16  = dbuf->sval;
+					disp16 += read16s( dbuf->val + 2 );
+					disp16 += 4;
+					addchar( '(' );
+					prints ( dbuf, (int)disp16, SIZE_WORD );
+					addchar( '.' );
+					addchar( 'w' );
+					addstr ( dbuf, ",PC)" );
+					dbuf->used++;
+					break;
+				case 0b011: // (bd,PC,Xn,od)
+					eaext = read16( dbuf->val + 2 );
+					addchar( '(' );
+					if( ISBITSET( eaext, 8 ) )
+					{
+						// bd  = dbuf->sval + 4 + read32s( dbuf->val + 3 );
+						opcode_ammx_ea_bd( dbuf, opc );
+						opcode_ammx_ea_pc( dbuf, opc );
+						opcode_ammx_ea_xn( dbuf, opc );
+						opcode_ammx_ea_od( dbuf, opc );
+					}
+					else
+					{
+						// d8  = dbuf->sval + 4 + read8s( dbuf->val + 3 );
+						opcode_ammx_ea_d8( dbuf, opc );
+						opcode_ammx_ea_pc( dbuf, opc );
+						opcode_ammx_ea_xn( dbuf, opc );
+					}
+					addchar( ')' );
+					break;
+				case 0b100: // #<data>
+					addchar( '#' );
+					if( bita )
+					{
+						printu ( dbuf, read16( dbuf->val + 2 ), SIZE_WORD );
+						addchar( '.' );
+						addchar( 'w' );
+						dbuf->used++;
+					}
+					else
+					{
+						printq ( dbuf, read64( dbuf->val + 2 ) );
+						addchar( '.' );
+						addchar( 'q' );
+						dbuf->used++;
+						dbuf->used++;
+						dbuf->used++;
+						dbuf->used++;
+					}
+					break;
+				case 0b101: // Reserved
+				case 0b110: // Reserved
+				case 0b111: // Reserved
+					break;
+			}
+			break;
+	}
+}
+void opcode_ammx_rega2(dis_buffer_t *dbuf, ushort opc)
+{
+	unsigned int bita = ISBITSET( opc, 8 );
+	unsigned int rega = BITFIELD( opc, 2, 0 );
+
+	addstr ( dbuf, dregs[ ( ( rega + 8 ) + ( bita ? 16 : 0 ) ) + 0 ] );					
+	addchar( '-' );
+	addstr ( dbuf, dregs[ ( ( rega + 8 ) + ( bita ? 16 : 0 ) ) + 3 ] );					
+}
+void opcode_ammx_regb1(dis_buffer_t *dbuf, ushort opc)
+{
+	unsigned int opc2 = read32( dbuf->val );
+	unsigned int bitb = ISBITSET( opc, 7 );
+	unsigned int regb = BITFIELD( opc2, 15, 12 );
+
+	addstr ( dbuf, dregs[ ( ( regb + 0 ) + ( bitb ? 16 : 0 ) ) + 0 ] );
+}
+void opcode_ammx_regb2(dis_buffer_t *dbuf, ushort opc)
+{
+	// Dummy
+}
+void opcode_ammx_regd1(dis_buffer_t *dbuf, ushort opc)
+{
+	unsigned int opc2 = read32( dbuf->val );
+	unsigned int bitd = ISBITSET( opc, 6 );
+	unsigned int regd = BITFIELD( opc2, 11, 8 );
+
+	addstr ( dbuf, dregs[ ( ( regd + 0 ) + ( bitd ? 16 : 0 ) ) + 0 ] );
+}
+void opcode_ammx_regd2(dis_buffer_t *dbuf, ushort opc)
+{
+	unsigned int opc2 = read32( dbuf->val );
+	unsigned int bitd = ISBITSET( opc, 6 );
+	unsigned int regd = BITFIELD( opc2, 11, 8 );
+
+	addstr ( dbuf, dregs[ ( ( regd + 0 ) + ( bitd ? 16 : 0 ) ) + 0 ] );
+	addchar( ':' );
+	addstr ( dbuf, dregs[ ( ( regd + 0 ) + ( bitd ? 16 : 0 ) ) + 1 ] );
+}
+void opcode_ammx_vperm(dis_buffer_t *dbuf, ushort opc)
+{
+	unsigned int opc2 = read32( dbuf->val );
+	unsigned int bita = ISBITSET( opc, 8 );
+	unsigned int bitb = ISBITSET( opc, 7 );
+	unsigned int bitd = ISBITSET( opc, 6 );
+	unsigned int rega = BITFIELD( opc2, 3, 0 );
+	unsigned int regb = BITFIELD( opc2, 15, 12 );
+	unsigned int regd = BITFIELD( opc2, 11, 8 );
+
+	addstr ( dbuf, "VPERM\t#" );
+	printu ( dbuf, read32( dbuf->val + 2 ), SIZE_LONG );
+	addchar( ',' );
+	addstr ( dbuf, dregs[ rega + ( bita ? 16 : 0 ) ] );
+	addchar( ',' );
+	addstr ( dbuf, dregs[ regb + ( bitb ? 16 : 0 ) ] );
+	addchar( ',' );
+	addstr ( dbuf, dregs[ regd + ( bitd ? 16 : 0 ) ] );
+
+	dbuf->used++;
+	dbuf->used++;
+	dbuf->used++;
+}
+void opcode_ammx(dis_buffer_t *dbuf, ushort opc)
+{
+	unsigned int i;
+	unsigned int opc2 = read32( dbuf->val );
+	unsigned int opid = BITFIELD( opc2, 5, 0 );
+	dis_func_t *func;
+
+	// AMMX MNEMONIC
+
+	if( BITFIELD( opc, 5, 0 ) == 0b111111 )
+	{
+		opcode_ammx_vperm( dbuf, opc );
+		return;
+	}
+
+	switch( ammx_opdef[ opid ][ 0 ] )
+	{
+		case AMMX_00:
+			addstr( dbuf, ammx_opcode[ opid ][ 0 ] );
+			break;
+		case AMMX_08:
+			addstr( dbuf, ammx_opcode[ opid ][ ISBITSET( opc2,  8 ) > 0 ] );
+			break;
+		case AMMX_12:
+			addstr( dbuf, ammx_opcode[ opid ][ ISBITSET( opc2, 12 ) > 0 ] );
+			break;
+	}
+
+	addstr( dbuf, "\t" );
+
+	// AMMX OPERANDS (up to 3 operands)
+
+	for( i = 1; i < 4; i++ )
+	{
+		func = ammx_opreg[ ammx_opdef[ opid ][ i ] ];
+		
+		if( func != NULL )
+			func( dbuf, opc );
+		
+		if( i < 3 && ammx_opdef[ opid ][ i + 1 ] )
+			addstr( dbuf, "," );
+	}
+
+	addchar( 0 );
+	dbuf->used++;
+}
+
+
+/*
  * copy const string 's' into ``dbuf''->casm
  */
 void addstr(dis_buffer_t *dbuf, const char *s)
@@ -3040,8 +3582,14 @@ void print_disp(dis_buffer_t *dbuf, int disp, int sz, int rel, int dd)
   ulong nv,diff;
     
   if (rel == -1) {
+    
+	// QUICK FIX :
+	// gcc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516
+	// warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+	// nv = disp + (uint)dbuf->sval + 2*(dd+1);
+	
     /*phx - use sval to print real destination address */
-    nv = disp + (uint)dbuf->sval + 2*(dd+1);
+    nv = disp + ((ulong)dbuf->sval) + 2*(dd+1);
     printu(dbuf, nv, SIZE_LONG);
   }
   else {
@@ -3145,6 +3693,46 @@ void printu(dis_buffer_t *dbuf, uint val, int sz)
   dbuf->casm = &dbuf->casm[strlen(dbuf->casm)];
 }
 
+/*
+void printq(dis_buffer_t *dbuf, uint val1, uint val2 )
+{
+	static char buf[ sizeof(long) * NBBY / 3 + 2 ];
+	char *p, ch;
+
+	addchar('0');
+	addchar('x');
+
+	p = buf;
+
+	do { *++p = "0123456789abcdef"[ val2 % 16 ]; } while ( val2 /= 16 );
+	do { *++p = "0123456789abcdef"[ val1 % 16 ]; } while ( val1 /= 16 );
+
+	while ((ch = *p--)) addchar(ch);
+
+	*dbuf->casm = 0;
+
+	dbuf->casm = &dbuf->casm[ strlen( dbuf->casm ) ];
+}
+*/
+
+void printq(dis_buffer_t *dbuf, ulonglong val )
+{
+	static char buf[ sizeof(ulonglong) * NBBY / 3 + 2 ];
+	char *p, ch;
+
+	addchar('0');
+	addchar('x');
+
+	p = buf;
+
+	do { *++p = "0123456789abcdef"[ val % 16 ]; } while ( val /= 16 );
+
+	while ((ch = *p--)) addchar(ch);
+
+	*dbuf->casm = 0;
+
+	dbuf->casm = &dbuf->casm[ strlen( dbuf->casm ) ];
+}
 
 void iprintu(dis_buffer_t *dbuf, uint val, int sz)
 {

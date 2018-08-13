@@ -1,7 +1,7 @@
-/* $VER: m68k_disasm.h V0.6 (05.10.2008)
+/* $VER: m68k_disasm.h V0.7 (12.08.2018)
  *
  * Disassembler module for the M680x0 microprocessor family
- * Copyright (c) 1999-2002  Frank Wille
+ * Copyright (c) 1999-2018  Frank Wille
  * Based on NetBSD's m68k/m68k/db_disasm.c by Christian E. Hopps.
  *
  * Copyright (c) 1994 Christian E. Hopps
@@ -33,8 +33,12 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *
- * v0.8  (05.10.2008) phx
+ * v0.7  (12.08.2018) flype
+ *       Added AC68080 AMMX support.
+ * v0.6  (05.10.2008) phx
  *       Cleanup. Removed unused types and defines.
+ * v0.5  (11.07.2004) phx
+ *       Fixed sign for word- and longword-branches.
  * v0.4  (18.04.2002) phx
  *       FETOXM1 was missing.
  * v0.1  (26.06.2000) phx
@@ -50,7 +54,7 @@
 
 /* version/revision */
 #define M68KDISASM_VER 0
-#define M68KDISASM_REV 6
+#define M68KDISASM_REV 7
 
 
 typedef unsigned short m68k_word;  /* pointer to 16-bit instruction word */
@@ -485,6 +489,7 @@ typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
 typedef unsigned long ulong;
+typedef unsigned long long ulonglong;
 
 
 /* m68k_disasm.o prototypes */

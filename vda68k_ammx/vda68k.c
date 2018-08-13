@@ -1,10 +1,10 @@
-/* $VER: vda68k V1.4 (25.11.2009)
+/* $VER: vda68k V1.5 (12.08.2018)
  *
  * Simple M68k file and memory disassembler.
- * Copyright (c) 2000-2009  Frank Wille
+ * Copyright (c) 2000-2018  Frank Wille
  *
  * vdappc is freeware and part of the portable and retargetable ANSI C
- * compiler vbcc, copyright (c) 1995-2009 by Volker Barthelmann.
+ * compiler vbcc, copyright (c) 1995-2018 by Volker Barthelmann.
  * vdappc may be freely redistributed as long as no modifications are
  * made and nothing is charged for it. Non-commercial usage is allowed
  * without any restrictions.
@@ -12,6 +12,8 @@
  * SOLD COMMERCIALLY WITHOUT PERMISSION FROM THE AUTHOR.
  *
  *
+ * v1.5  (12.08.2018) flype
+ *       Added AC68080 AMMX support.
  * v1.4  (25.11.2009) phx
  *       Optional start address and end address arguments.
  * v1.3  (05.10.2008) phx
@@ -29,9 +31,9 @@
 #include "m68k_disasm.h"
 
 #define VERSION 1
-#define REVISION 4
+#define REVISION 5
 
-const char *_ver = "$VER: vda68k 1.4 (25.11.2009)\r\n";
+const char *_ver = "$VER: vda68k-ammx 1.5 (12.8.2018)\r\n";
 
 
 int main(int argc,char *argv[])
@@ -50,9 +52,9 @@ int main(int argc,char *argv[])
   char *s;
 
   if (argc<2 || argc>4 || !strncmp(argv[1],"-h",2) || argv[1][0]=='?') {
-    printf("vda68k V%d.%d  (c)2000-2009 by Frank Wille\n"
-           "M68k disassembler V%d.%d  (c)1999-2008 by Frank Wille\n"
-           "Based on NetBSD disassembler  (c)1994 by Christian E. Hopps\n"
+    printf("vda68k-ammx V%d.%d (c) 2000-2018 by Frank Wille\n"
+           "M68k disassembler V%d.%d (c) 1999-2018 by Frank Wille\n"
+           "Based on NetBSD disassembler (c) 1994 by Christian E. Hopps\n"
            "Build date: " __DATE__ ", " __TIME__ "\n\n"
            "Usage: %s [file name] [start address] [end address]\n"
            "Either file name or start address must be given, or both.\n",
