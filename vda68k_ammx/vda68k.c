@@ -33,114 +33,134 @@
 #define VERSION 1
 #define REVISION 5
 
-const char *_ver = "$VER: vda68k-ammx 1.5 (12.8.2018)\r\n";
+const char * _ver = "$VER: vda68k-ammx 1.5 (12.8.2018)\r\n";
 
+int main(int argc, char * argv[]) {
+	FILE * fh;
+	m68k_word buf[12];
+	m68k_word * p = NULL, * endp = NULL, * ip;
+	unsigned int wordcount, wordbuffsz;
+	unsigned long foff;
+	long pos;
+	struct DisasmPara_68k dp;
+	char opcode[16];
+	char operands[128];
+	char iwordbuf[32];
+	char tmpbuf[8];
+	int n;
+	char * s;
 
-int main(int argc,char *argv[])
-{
-  FILE *fh;
-  m68k_word buf[12];
-  m68k_word *p=NULL,*endp=NULL,*ip;
-  unsigned long foff;
-  long pos;
-  struct DisasmPara_68k dp;
-  char opcode[16];
-  char operands[128];
-  char iwordbuf[32];
-  char tmpbuf[8];
-  int n;
-  char *s;
+	if (argc < 2 || argc > 4 || !strncmp(argv[1], "-h", 2) || argv[1][0] == '?') {
+		printf("vda68k-ammx V%d.%d (c) 2000-2018 by Frank Wille\n"
+			"M68k disassembler V%d.%d (c) 1999-2018 by Frank Wille\n"
+			"Based on NetBSD disassembler (c) 1994 by Christian E. Hopps\n"
+			"Build date: " __DATE__ ", " __TIME__ "\n\n"
+			"Usage: %s [file name] [start address] [end address]\n"
+			"Either file name or start address must be given, or both.\n",
+			VERSION, REVISION, M68KDISASM_VER, M68KDISASM_REV, argv[0]);
+		return 1;
+	}
 
-  if (argc<2 || argc>4 || !strncmp(argv[1],"-h",2) || argv[1][0]=='?') {
-    printf("vda68k-ammx V%d.%d (c) 2000-2018 by Frank Wille\n"
-           "M68k disassembler V%d.%d (c) 1999-2018 by Frank Wille\n"
-           "Based on NetBSD disassembler (c) 1994 by Christian E. Hopps\n"
-           "Build date: " __DATE__ ", " __TIME__ "\n\n"
-           "Usage: %s [file name] [start address] [end address]\n"
-           "Either file name or start address must be given, or both.\n",
-           VERSION,REVISION,M68KDISASM_VER,M68KDISASM_REV,argv[0]);
-    return 1;
-  }
+	/* initialize DisasmPara */
+	
+	memset( & dp, 0, sizeof(struct DisasmPara_68k));
+	dp.opcode = opcode;
+	dp.operands = operands;
+	dp.radix = 16; /* we want hex! */
+	wordcount = 6; /* print up to 6 words */
+	wordbuffsz = (wordcount * 5) + 1;
+	iwordbuf[wordbuffsz] = '\0';
 
-  /* initialize DisasmPara */
-  memset(&dp,0,sizeof(struct DisasmPara_68k));
-  dp.opcode = opcode;
-  dp.operands = operands;
-  dp.radix = 16;  /* we want hex! */
-  iwordbuf[26] = '\0';
+	/* parse arguments */
+	
+	n = 1;
+	
+	fh = fopen(argv[1], "rb");
+	
+	if (!isdigit((unsigned int) argv[1][0]) || fh != NULL) {
+		/* first argument is a file name */
+		if (!fh) {
+			fprintf(stderr, "%s: Can't open %s!\n", argv[0], argv[1]);
+			return 10;
+		}
+		n++;
+		dp.instr = buf;
+	}
+	
+	if (n < argc) {
+		sscanf(argv[n], "%i", (int * ) & p);
+		n++;
+	} else if (!fh) {
+		fprintf(stderr, "%s: File name or address expected!\n", argv[0]);
+		return 10;
+	}
+	
+	if (n < argc)
+		sscanf(argv[n], "%i", (int * ) & endp);
+	
+	if (fh) {
+		if (foff = (unsigned long) p)
+			fseek(fh, foff, SEEK_SET);
+	}
 
-  /* parse arguments */
-  n = 1;
-  fh = fopen(argv[1],"rb");
-  if (!isdigit((unsigned int)argv[1][0]) || fh!=NULL) {
-    /* first argument is a file name */
-    if (!fh) {
-      fprintf(stderr,"%s: Can't open %s!\n",argv[0],argv[1]);
-      return 10;
-    }
-    n++;
-    dp.instr = buf;
-  }
-  if (n < argc) {
-    sscanf(argv[n],"%i",(int *)&p);
-    n++;
-  }
-  else if (!fh) {
-    fprintf(stderr,"%s: File name or address expected!\n",argv[0]);
-    return 10;
-  }
-  if (n < argc)
-    sscanf(argv[n],"%i",(int *)&endp);
-  if (fh) {
-    if (foff = (unsigned long)p)
-      fseek(fh,foff,SEEK_SET);
-  }
+	for (;;) {
+		
+		/* disassembler loop */
+		
+		if (fh)
+			p = (m68k_word * ) foff;
+		
+		if (endp != NULL && p >= endp)
+			break;
 
-  for (;;) {
-    /* disassembler loop */
-    if (fh)
-      p = (m68k_word *)foff;
-    if (endp!=NULL && p>=endp)
-      break;
+		if (fh) {
+			
+			pos = ftell(fh);
+			memset(buf, 0, sizeof(m68k_word) * 8);
+			
+			if (fread(buf, sizeof(m68k_word), 8, fh) < 1)
+				break; /* EOF */
+			
+			dp.iaddr = p;
+			
+			n = M68k_Disassemble( & dp) - dp.instr;
+			
+			fseek(fh, pos, SEEK_SET);
+			
+			if (fread(buf, sizeof(m68k_word), n, fh) != n)
+				break; /* read error */
+		} else {
+			dp.instr = dp.iaddr = p;
+		}
+		
+		p = M68k_Disassemble( & dp);
 
-    if (fh) {
-      pos = ftell(fh);
-      memset(buf,0,sizeof(m68k_word)*8);
-      if (fread(buf,sizeof(m68k_word),8,fh) < 1)
-        break;  /* EOF */
-      dp.iaddr = p;
-      n = M68k_Disassemble(&dp) - dp.instr;
-      fseek(fh,pos,SEEK_SET);
-      if (fread(buf,sizeof(m68k_word),n,fh) != n)
-        break;  /* read error */
-    }
-    else
-      dp.instr = dp.iaddr = p;
+		/* print up to 5 instruction words */
+		
+		for (n = 0; n < wordbuffsz; iwordbuf[n++] = ' ');
+		if ((n = (int)(p - dp.instr)) > wordcount)
+			n = wordcount;
+		
+		ip = dp.instr;
+		s = iwordbuf;
+		
+		while (n--) {
+			sprintf(tmpbuf, "%02x%02x", *(unsigned char * ) ip, *((unsigned char * ) ip + 1));
+			ip++;
+			strncpy(s, tmpbuf, 4);
+			s += 5;
+		}
 
-    p = M68k_Disassemble(&dp);
+		printf("%08lx: %s%-7s %s\n", (unsigned long) dp.iaddr, iwordbuf, opcode, operands);
+		
+		if (fh)
+			foff += (p - dp.instr) * sizeof(m68k_word);
+	}
 
-    /* print up to 5 instruction words */
-    for (n = 0; n<26; iwordbuf[n++]=' ');
-    if ((n = (int)(p-dp.instr)) > 5)
-      n = 5;
-    ip = dp.instr;
-    s = iwordbuf;
-    while (n--) {
-      sprintf(tmpbuf,"%02x%02x",*(unsigned char *)ip,
-              *((unsigned char *)ip+1));
-      ip++;
-      strncpy(s,tmpbuf,4);
-      s += 5;
-    }
+	/* cleanup */
+	
+	if (fh)
+		fclose(fh);
 
-    printf("%08lx: %s%-7s %s\n",(unsigned long)dp.iaddr,iwordbuf,
-           opcode,operands);
-    if (fh)
-      foff += (p - dp.instr) * sizeof(m68k_word);
-  }
-
-  /* cleanup */
-  if (fh)
-    fclose(fh);
-  return 0;
+	return 0;
 }

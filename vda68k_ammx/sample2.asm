@@ -1,5 +1,5 @@
 
-; vasmm68k_mot_os3 -Fbin -m68080 -no-opt sample.asm -o sample
+; vasmm68k_mot_os3 -Fbin -m68080 -no-opt sample2.asm -o sample2
 
 ; notes:
 ; TRANSi-Lo          : not implemented in VASM
@@ -34,16 +34,31 @@ MAIN:
 
 .loop
 .before
+	
+	nop
+	nop
+	
+	move     .before.w(a5),d0           ; 101 reg
+	move     .before.w(a5),d1           ; 101 reg
+	move    (.after.w,a5),d2            ; 101 reg
+	move    (.after.w,a5),d3            ; 101 reg
+	nop
 
-	LOAD     .before.w(a5),e20        ; 101 reg
-	LOAD     .before.w(b5),e21        ; 101 reg
-	LOAD    (.after.w,a5),e22         ; 101 reg
-	LOAD    (.after.w,b5),e23         ; 101 reg
+	LOAD     .before.w(b5),e20          ; 101 reg
+	LOAD     .before.w(b5),e21          ; 101 reg
+	LOAD    (.after.w,b5),e22           ; 101 reg
+	LOAD    (.after.w,b5),e23           ; 101 reg
+	nop
+
+	move    ($12.b,a2,d3.l*8),d7        ; 110 reg
+	move    ($1234.w,a2,d3.l*8),d7      ; 110 reg
+	move    ($12345678.l,a2,d3.l*8),d7  ; 110 reg
 	nop
 
 	LOAD    ($12.b,a2,d3.l*8),e18       ; 110 reg
 	LOAD    ($1234.w,a2,d3.l*8),e18     ; 110 reg
 	LOAD    ($12345678.l,a2,d3.l*8),e18 ; 110 reg
+	nop
 
 	LOAD    ($12.b,a0,d0.w*1),e18       ; 110 reg
 	LOAD    ($12.b,a1,d1.w*2),e18       ; 110 reg
@@ -75,12 +90,22 @@ MAIN:
 	LOAD    (.loop.l,a7,a7.l*8),e18   ; 110 reg
 	nop
 	
-	LOAD    .loop.w,e14               ; 111 000
-	LOAD    $0123.w,e15               ; 111 000
+	move    .loop.w,d7                ; 111 000
+	move    .loop.l,d7                ; 111 001
+	nop
+
+	LOAD    .loop.w,d7                ; 111 000
+	LOAD    .loop.l,d7                ; 111 001
+	nop
+
+	move    $1234.w,d7                ; 111 000
+	move    $12345678.l,d7            ; 111 001
+	move    $12345678abcdef1.l,d7     ; 111 001
 	nop
 	
-	LOAD    .loop.l,e16               ; 111 001
-	LOAD    $01234567.l,e17           ; 111 001
+	LOAD    $1234.w,e15               ; 111 000
+	LOAD    $12345678.l,e17           ; 111 001
+	LOAD    $12345678abcdef1.l,e17    ; 111 001
 	nop
 	
 	LOAD     .loop.w(pc),e17          ; 111 010
@@ -104,17 +129,64 @@ MAIN:
 	LOAD    (.loop.l,pc,d7.l*8),e18   ; 111 011
 	nop
 	
-	; LOAD  #$1234.w,d0               ; 111 100
-	; LOAD  #$5678.w,e23              ; 111 100
-	;        -------A-DMODREG  ----REGD--------
-	dc.w    %1111111100111100,%0000000000000001,$1234
-	dc.w    %1111111101111100,%0000111100000001,$5678
+	move    (a2,d5.l*2),d7
+	move    ($12,a2,d5.l*2),d7
+	move    ($1234,a2,d5.l*2),d7
+	move    ([a2]),d7
+	move    ([$1234]),d7
+	move    ([$1234],$5678),d7
+	move    ([$1234],d5.l*2),d7
+	move    ([$1234,a2]),d7
+	move    ([$1234,a2],$5678),d7
+	move    ([$1234,a2],d5.l*2),d7
+	move    ([$1234,a2],d5.l*2,$5678),d7
+	move    ([$1234,d5.l*2]),d7
+	move    ([$1234,d5.l*2],$5678),d7
+	move    ([$1234,a2,d5.l*2]),d7
+	move    ([$1234,a2,d5.l*2],$5678),d7
 	nop
 	
-	LOAD    #$0123,d0                 ; 111 100
-	LOAD    #$01234567,d1             ; 111 100
-	LOAD    #$0123456789ab,d2         ; 111 100
-	LOAD    #$0123456789abcdef,d3     ; 111 100
+	LOAD    (a2,d5.l*2),d7
+	LOAD    ($12,a2,d5.l*2),d7
+	LOAD    ($1234,a2,d5.l*2),d7
+	LOAD    ([a2]),d7
+	LOAD    ([$1234]),d7
+	LOAD    ([$1234],$5678),d7
+	LOAD    ([$1234],d5.l*2),d7
+	LOAD    ([$1234,a2]),d7
+	LOAD    ([$1234,a2],$5678),d7
+	LOAD    ([$1234,a2],d5.l*2),d7
+	LOAD    ([$1234,a2],d5.l*2,$5678),d7
+	LOAD    ([$1234,d5.l*2]),d7
+	LOAD    ([$1234,d5.l*2],$5678),d7
+	LOAD    ([$1234,a2,d5.l*2]),d7
+	LOAD    ([$1234,a2,d5.l*2],$5678),d7
+	nop
+
+	move    ([.before,a2,d5.l*2],$5678),d7
+	move    ([.before,pc,d5.l*2],$5678),d7
+	move    ([.after,a2,d5.l*2],$5678),d7
+	move    ([.after,pc,d5.l*2],$5678),d7
+	nop
+
+	LOAD    ([.before,b2,d5.l*2],$5678),d7
+	LOAD    ([.before,pc,d5.l*2],$5678),d7
+	LOAD    ([.after,b2,d5.l*2],$5678),d7
+	LOAD    ([.after,pc,d5.l*2],$5678),d7
+	nop
+
+	move.b  #$12,d0                   ; 111 100
+	move.w  #$1234,d0                 ; 111 100
+	move.l  #$12345678,d0             ; 111 100
+	nop
+	
+	LOAD.w  #$12,e0                   ; 111 100
+	LOAD.w  #$1234,e0                 ; 111 100
+	LOAD.w  #$5678,e1                 ; 111 100
+	LOAD    #$1234,e2                 ; 111 100
+	LOAD    #$12345678,e3             ; 111 100
+	LOAD    #$123456789abc,e4         ; 111 100
+	LOAD    #$123456789abcdef1,e5     ; 111 100
 	nop
 
 .after

@@ -89,15 +89,33 @@ MAIN:
 	LOAD    .loop.l(b5),e18
 	nop
 
-	LOAD    (.loop.l,b5,d0.w*1),e18
-	LOAD    (.loop.l,b5,d0.w*2),e18
-	LOAD    (.loop.l,b5,d0.w*4),e18
-	LOAD    (.loop.l,b5,d0.w*8),e18
-	LOAD    (.loop.l,b5,d0.l*1),e18
-	LOAD    (.loop.l,b5,d0.l*2),e18
-	LOAD    (.loop.l,b5,d0.l*4),e18
-	LOAD    (.loop.l,b5,d0.l*8),e18
+	LOAD    (.loop.l,a0,d0.w*1),e18
+	LOAD    (.loop.l,a1,d1.w*2),e18
+	LOAD    (.loop.l,a2,d2.w*4),e18
+	LOAD    (.loop.l,a3,d3.w*8),e18
+	LOAD    (.loop.l,a4,d4.l*1),e18
+	LOAD    (.loop.l,a5,d5.l*2),e18
+	LOAD    (.loop.l,a6,d6.l*4),e18
+	LOAD    (.loop.l,a7,d7.l*8),e18
+
+	LOAD    (.loop.l,b0,d0.w*1),e18
+	LOAD    (.loop.l,b1,d1.w*2),e18
+	LOAD    (.loop.l,b2,d2.w*4),e18
+	LOAD    (.loop.l,b3,d3.w*8),e18
+	LOAD    (.loop.l,b4,d4.l*1),e18
+	LOAD    (.loop.l,b5,d5.l*2),e18
+	LOAD    (.loop.l,b6,d6.l*4),e18
+	LOAD    (.loop.l,b7,d7.l*8),e18
 	nop
+
+	LOAD    (.loop.l,a0,a0.w*1),e18
+	LOAD    (.loop.l,a1,a1.w*2),e18
+	LOAD    (.loop.l,a2,a2.w*4),e18
+	LOAD    (.loop.l,a3,a3.w*8),e18
+	LOAD    (.loop.l,a4,a4.l*1),e18
+	LOAD    (.loop.l,a5,a5.l*2),e18
+	LOAD    (.loop.l,a6,a6.l*4),e18
+	LOAD    (.loop.l,a7,a7.l*8),e18
 
 	LOAD    .loop.w(pc),e17
 	LOAD    .loop.l(pc),e18
