@@ -196,6 +196,7 @@ void ammx_vea_d8(dis_buffer_t * dbuf, uint16 op1, uint16 ext, uint16 pcrel) {
 	disp += DOWNTO(ext, 7, 0);
 	prints(dbuf, disp, SIZE_BYTE);
 }
+
 void ammx_vea_bd(dis_buffer_t * dbuf, uint16 op1, uint16 ext, uint16 pcrel) {
 	uint32 disp = 0;
 
@@ -222,6 +223,7 @@ void ammx_vea_bd(dis_buffer_t * dbuf, uint16 op1, uint16 ext, uint16 pcrel) {
 		break;
 	}
 }
+
 void ammx_vea_an(dis_buffer_t * dbuf, uint16 op1, uint16 ext) {
 	uint32 bita = BIT(op1, 8);
 	uint32 rega = DOWNTO(op1, 2, 0);
@@ -231,6 +233,7 @@ void ammx_vea_an(dis_buffer_t * dbuf, uint16 op1, uint16 ext) {
 		addchar('z');
 	addstr(dbuf, ammx_aregs[rega + (bita ? 8 : 0)]);
 }
+
 void ammx_vea_pc(dis_buffer_t * dbuf, uint16 op1, uint16 ext) {
 
 	addchar(',');
@@ -239,6 +242,7 @@ void ammx_vea_pc(dis_buffer_t * dbuf, uint16 op1, uint16 ext) {
 	addchar('p');
 	addchar('c');
 }
+
 void ammx_vea_xn(dis_buffer_t * dbuf, uint16 op1, uint16 ext) {
 	uint32 reg;
 
@@ -259,6 +263,7 @@ void ammx_vea_xn(dis_buffer_t * dbuf, uint16 op1, uint16 ext) {
 	addchar('*'); // SCALE
 	addchar('0' + (1 << DOWNTO(ext, 10, 9)));
 }
+
 void ammx_vea_od(dis_buffer_t * dbuf, uint16 op1, uint16 ext) {
 	uint32 disp;
 	uint32 pos = 4;
@@ -290,6 +295,7 @@ void ammx_vea_od(dis_buffer_t * dbuf, uint16 op1, uint16 ext) {
 		break;
 	}
 }
+
 void ammx_vea   (dis_buffer_t * dbuf, uint16 op1) {
 	uint16 ext;
 	uint32 disp;
@@ -415,6 +421,7 @@ void ammx_rega1(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	
 	addstr(dbuf, ammx_dregs[rega + (bita ? 16 : 0)]);
 }
+
 void ammx_rega2(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bita = BIT(op1, 8);
 	uint32 rega = DOWNTO(op1, 2, 0);
@@ -423,18 +430,22 @@ void ammx_rega2(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	addchar('-');
 	addstr(dbuf, ammx_dregs[((rega + 8) + (bita ? 16 : 0)) + 3]);
 }
+
 void ammx_regaf(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	// Dummy
 }
+
 void ammx_regb1(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bitb = BIT(op1, 7);
 	uint32 regb = DOWNTO(op2, 15, 12);
 	
 	addstr(dbuf, ammx_dregs[regb + (bitb ? 16 : 0)]);
 }
+
 void ammx_regb2(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	// Dummy
 }
+
 void ammx_regbf(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bitb = BIT(op1, 7);
 	uint32 regb = DOWNTO(op2, 15, 12);
@@ -443,12 +454,14 @@ void ammx_regbf(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	addstr(dbuf, ammx_dregs[regb + (bitb ? 16 : 0)]);
 	addchar(']');
 }
+
 void ammx_regd1(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bitd = BIT(op1, 6);
 	uint32 regd = DOWNTO(op2, 11, 8);
 	
 	addstr(dbuf, ammx_dregs[regd + (bitd ? 16 : 0)]);
 }
+
 void ammx_regd2(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bitd = BIT(op1, 6);
 	uint32 regd = DOWNTO(op2, 11, 8);
@@ -457,6 +470,7 @@ void ammx_regd2(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	addchar(':');
 	addstr(dbuf, ammx_dregs[(regd + (bitd ? 16 : 0)) + 1]);
 }
+
 void ammx_regdf(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bitd = BIT(op1, 6);
 	uint32 regd = DOWNTO(op2, 11, 8);
