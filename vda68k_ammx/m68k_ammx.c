@@ -110,6 +110,9 @@ const char *const ammx_opid[128] = {
 };
 
 const int ammx_operand[128][3] = {
+	
+	// Standards
+
 	{ AMMX_VEA  , AMMX_REGB1, AMMX_REGD1  },	// AMMX
 	{ AMMX_VEA  , AMMX_REGD1, AMMX_IGNORE },	// LOAD
 	{ AMMX_REGA2, AMMX_REGD2, AMMX_IGNORE },	// TRANSHI
@@ -175,7 +178,7 @@ const int ammx_operand[128][3] = {
 	{ AMMX_VEA  , AMMX_REGB1, AMMX_REGD1  },	// LEA3D
 	{ AMMX_VEA  , AMMX_REGB1, AMMX_REGD1  },	// AMMX
 
-	// Specials (id+64)
+	// Specials
 
 	{ AMMX_VEA  , AMMX_REGB1, AMMX_REGD1  },	// AMMX
 	{ AMMX_VEA  , AMMX_REGDF, AMMX_IGNORE },	// LOADi

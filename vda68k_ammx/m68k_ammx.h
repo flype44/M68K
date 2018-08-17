@@ -17,6 +17,9 @@
 #define M68KAMMX_VER 0
 #define M68KAMMX_REV 1
 
+#define BIT(a,b)      (((a)>>(b))&1)
+#define DOWNTO(a,b,c) (((a)>>(c))&((1<<((b)-(c)+1))-1))
+
 enum ammx_operands {
 	AMMX_IGNORE, // Null operand
 	AMMX_VEA,    // <VEA>
