@@ -24,8 +24,8 @@ extern uint32 read32u(uint16 *);
 extern  int32 read32s(uint16 *);
 extern uint64 read64u(uint16 *);
 
-extern void addstr(dis_buffer_t *,  const char *);
-extern void prints(dis_buffer_t *,  int32, int32);
+extern void addstr(dis_buffer_t *, const char *);
+extern void prints(dis_buffer_t *, int32, int32);
 extern void printu(dis_buffer_t *, uint64, int32);
 
 /* consts */
@@ -409,11 +409,13 @@ void ammx_vea   (dis_buffer_t * dbuf, uint16 op1) {
 void ammx_rega1(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bita = BIT(op1, 8);
 	uint32 rega = DOWNTO(op2, 3, 0);
+	
 	addstr(dbuf, ammx_dregs[rega + (bita ? 16 : 0)]);
 }
 void ammx_rega2(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bita = BIT(op1, 8);
 	uint32 rega = DOWNTO(op1, 2, 0);
+	
 	addstr(dbuf, ammx_dregs[((rega + 8) + (bita ? 16 : 0)) + 0]);
 	addchar('-');
 	addstr(dbuf, ammx_dregs[((rega + 8) + (bita ? 16 : 0)) + 3]);
@@ -424,6 +426,7 @@ void ammx_regaf(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 void ammx_regb1(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bitb = BIT(op1, 7);
 	uint32 regb = DOWNTO(op2, 15, 12);
+	
 	addstr(dbuf, ammx_dregs[regb + (bitb ? 16 : 0)]);
 }
 void ammx_regb2(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
@@ -432,6 +435,7 @@ void ammx_regb2(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 void ammx_regbf(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bitb = BIT(op1, 7);
 	uint32 regb = DOWNTO(op2, 15, 12);
+	
 	addchar('[');
 	addstr(dbuf, ammx_dregs[regb + (bitb ? 16 : 0)]);
 	addchar(']');
@@ -439,11 +443,13 @@ void ammx_regbf(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 void ammx_regd1(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bitd = BIT(op1, 6);
 	uint32 regd = DOWNTO(op2, 11, 8);
+	
 	addstr(dbuf, ammx_dregs[regd + (bitd ? 16 : 0)]);
 }
 void ammx_regd2(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bitd = BIT(op1, 6);
 	uint32 regd = DOWNTO(op2, 11, 8);
+	
 	addstr(dbuf, ammx_dregs[(regd + (bitd ? 16 : 0)) + 0]);
 	addchar(':');
 	addstr(dbuf, ammx_dregs[(regd + (bitd ? 16 : 0)) + 1]);
@@ -451,6 +457,7 @@ void ammx_regd2(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 void ammx_regdf(dis_buffer_t * dbuf, uint16 op1, uint16 op2) {
 	uint32 bitd = BIT(op1, 6);
 	uint32 regd = DOWNTO(op2, 11, 8);
+	
 	addchar('[');
 	addstr(dbuf, ammx_dregs[regd + (bitd ? 16 : 0)]);
 	addchar(']');
