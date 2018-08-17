@@ -29,11 +29,12 @@
 #include <string.h>
 #include <ctype.h>
 #include "m68k_disasm.h"
+#include "m68k_ammx.h"
 
-#define VERSION 1
+#define VERSION  1
 #define REVISION 5
 
-const char * _ver = "$VER: vda68k-ammx 1.5 (12.8.2018)\r\n";
+const char * _ver = "$VER: vda68k 1.5 (12.8.2018)\r\n";
 
 int main(int argc, char * argv[]) {
 	FILE * fh;
@@ -53,11 +54,15 @@ int main(int argc, char * argv[]) {
 	if (argc < 2 || argc > 4 || !strncmp(argv[1], "-h", 2) || argv[1][0] == '?') {
 		printf("vda68k-ammx V%d.%d (c) 2000-2018 by Frank Wille\n"
 			"M68k disassembler V%d.%d (c) 1999-2018 by Frank Wille\n"
+			"AMMX disassembler V%d.%d (c) 2018-2019 by Philippe Carpentier\n"
 			"Based on NetBSD disassembler (c) 1994 by Christian E. Hopps\n"
 			"Build date: " __DATE__ ", " __TIME__ "\n\n"
 			"Usage: %s [file name] [start address] [end address]\n"
 			"Either file name or start address must be given, or both.\n",
-			VERSION, REVISION, M68KDISASM_VER, M68KDISASM_REV, argv[0]);
+			VERSION, REVISION, 
+			M68KDISASM_VER, M68KDISASM_REV, 
+			M68KAMMX_VER, M68KAMMX_REV,
+			argv[0]);
 		return 1;
 	}
 
@@ -78,7 +83,9 @@ int main(int argc, char * argv[]) {
 	fh = fopen(argv[1], "rb");
 	
 	if (!isdigit((unsigned int) argv[1][0]) || fh != NULL) {
+		
 		/* first argument is a file name */
+		
 		if (!fh) {
 			fprintf(stderr, "%s: Can't open %s!\n", argv[0], argv[1]);
 			return 10;
@@ -135,7 +142,7 @@ int main(int argc, char * argv[]) {
 		
 		p = M68k_Disassemble( & dp);
 
-		/* print up to 5 instruction words */
+		/* print up to 6 instruction words */
 		
 		for (n = 0; n < wordbuffsz; iwordbuf[n++] = ' ');
 		if ((n = (int)(p - dp.instr)) > wordcount)
@@ -147,8 +154,8 @@ int main(int argc, char * argv[]) {
 		while (n--) {
 			sprintf(tmpbuf, "%02x%02x", *(unsigned char * ) ip, *((unsigned char * ) ip + 1));
 			ip++;
-			strncpy(s, tmpbuf, 4);
-			s += 5;
+			strncpy(s, tmpbuf, 4); // "XXXX"
+			s += 5; // Len("XXXX") + SPACE
 		}
 
 		printf("%08lx: %s%-7s %s\n", (unsigned long) dp.iaddr, iwordbuf, opcode, operands);
