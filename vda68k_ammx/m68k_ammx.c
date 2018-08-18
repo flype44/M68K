@@ -199,10 +199,14 @@ void ammx_vea_d8(dis_buffer_t * dbuf, uint16 op1, uint16 ext, uint16 pcrel) {
 
 void ammx_vea_bd(dis_buffer_t * dbuf, uint16 op1, uint16 ext, uint16 pcrel) {
 	uint32 disp = 0;
-
+	
+	// INDEXED
+	
 	if (DOWNTO(ext, 1, 0))
-		addchar('['); /* indexed. */
-
+		addchar('['); 
+	
+	// SIZE
+	
 	switch (DOWNTO(ext, 5, 4)) {
 	case 0: // Reserved
 	case 1: // Null
@@ -252,15 +256,25 @@ void ammx_vea_xn(dis_buffer_t * dbuf, uint16 op1, uint16 ext) {
 		return;
 	}
 
-	if (BIT(ext, 8) && DOWNTO(ext, 1, 0) && BIT(ext, 2))
-		addchar(']'); /* post-indexed. */
+	// POST-INDEXED
 
-	reg = DOWNTO(ext, 14, 12);	
-	addchar(','); // XN
+	if (BIT(ext, 8) && DOWNTO(ext, 1, 0) && BIT(ext, 2))
+		addchar(']'); 
+
+	// XN
+
+	reg = DOWNTO(ext, 14, 12);
+	addchar(','); 
 	addstr(dbuf, BIT(ext, 15) ? ammx_aregs[reg] : ammx_dregs[reg]);
-	addchar('.'); // SIZE
+
+	// SIZE
+
+	addchar('.'); 
 	addchar(BIT(ext, 11) ? 'l' : 'w');
-	addchar('*'); // SCALE
+
+	// SCALE
+
+	addchar('*'); 
 	addchar('0' + (1 << DOWNTO(ext, 10, 9)));
 }
 
@@ -268,12 +282,16 @@ void ammx_vea_od(dis_buffer_t * dbuf, uint16 op1, uint16 ext) {
 	uint32 disp;
 	uint32 pos = 4;
 
+	// PRE-INDEXED
+
 	if (BIT(ext, 8) && DOWNTO(ext, 1, 0) && !BIT(ext, 2)) 
-		addchar(']'); /* pre-indexed */
+		addchar(']');
+
+	// SIZE
 
 	if (DOWNTO(ext, 5, 4) == 3) 
 		pos++; // bd is a long
-
+	
 	switch (DOWNTO(ext, 1, 0)) {
 	case 0: // None
 	case 1: // Null
