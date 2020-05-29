@@ -1,6 +1,6 @@
 /*********************************************************************
  ** Project: PlayPam7531.c
- ** Version: 7531 (3)
+ ** Version: 7531
  ** Date:    2020-may
  ** Short:   Play sound on a given channel.
  ** Purpose: Test PAMELA logic implementation.
@@ -18,7 +18,7 @@
 #include <hardware/dmabits.h>
 
 /*********************************************************************
- ** SAGA Audio Channel
+ ** SAGA AUDIO CHANNELS DEFINITIONS
  *********************************************************************/
 
 /*
@@ -80,6 +80,25 @@ struct SAGAChannel
   UWORD  ac_pad;   // Reserved
 } aud[16];
 
+/*********************************************************************
+ ** PRIVATE DEFINITIONS
+ *********************************************************************/
+ 
+#define APPNAME  "PlayPam2020"
+
+#define TEMPLATE "FILE/A,CHANNEL/N,RATE/N,VOLUME1/N,VOLUME2/N,IS16BITS/S,ISONESHOT/S"
+
+#define OPT_FILE      0
+#define OPT_CHANNEL   1
+#define OPT_RATE      2
+#define OPT_VOLUME1   3
+#define OPT_VOLUME2   4
+#define OPT_IS16BITS  5
+#define OPT_ISONESHOT 6
+#define OPT_LAST      7
+
+const BYTE VERSTRING[] = "$VER: PlayPam 0.5 (29-5-2020)\n";
+
 struct SAGAChannel* sndBank;
 
 struct DosLibrary* _DOSBase;
@@ -127,13 +146,20 @@ UBYTE* sndLoad( BYTE* fileName, LONG* fileSize )
 
 void sndPlay( int channel, int *ptr, int size, int rate, int vol1, int vol2, int is16bits, int isOneShot )
 {
-	if ( ptr )
+	if ( channel < 16 )
 	{
-		sndBank[ channel ].ac_ptr = ( ULONG* ) ( ( ULONG )ptr & 0xFFFFFFFE );
-		sndBank[ channel ].ac_len = ( ULONG  ) ( ( size >> ( is16bits ? 2 : 1 ) ) & 0x00FFFFFF );
-		sndBank[ channel ].ac_vol = ( UWORD  ) ( ( ( vol2 & 0x0040 ) << 8 ) | ( vol1 & 0x0040 ) );
-		sndBank[ channel ].ac_mod = ( UWORD  ) ( ( ( isOneShot & 1 ) << 1 ) | ( ( is16bits & 1 ) << 0 ) );
-		sndBank[ channel ].ac_per = ( UWORD  ) ( 3546895 / ( rate & 0xFFFF ) );
+		if ( vol1 > 128 ) vol1 = 128;
+		if ( vol2 > 128 ) vol2 = 128;
+		if ( rate > 56000 ) rate = 56000;
+		if ( isOneShot > 1 ) isOneShot = 1;
+		if ( is16bits > 1 ) is16bits = 1;
+		if ( is16bits ) size >>= 1;
+		
+		sndBank[ channel ].ac_ptr = ( ULONG* ) ptr;
+		sndBank[ channel ].ac_len = ( ULONG  ) size >> 1; // max = 0x00FFFFFF
+		sndBank[ channel ].ac_vol = ( UWORD  ) ( vol2 << 8 ) | vol1; // max = 128.128
+		sndBank[ channel ].ac_mod = ( UWORD  ) ( isOneShot << 1 ) | is16bits;
+		sndBank[ channel ].ac_per = ( UWORD  ) 3546895 / rate; // min = 2, max = 0xFFFF
 		
 		if ( channel < 4 )
 		{
@@ -155,7 +181,7 @@ void sndStop( int channel )
 		// Disable DMA for AUD0..3
 		CLR16( DMACON1, 1 << ( channel - 0 ) );
 	}
-	else
+	else if ( channel < 16 )
 	{
 		// Disable DMA for AUD4..15
 		CLR16( DMACON2, 1 << ( channel - 4 ) );
@@ -170,53 +196,78 @@ void sndFree( UBYTE* sndData )
 	}
 }
 
+/*********************************************************************
+ ** ENTRY POINT
+ *********************************************************************/
+
 int main( int argc, char *argv[] )
 {
-	UBYTE* sndData[8];
-	LONG   sndSize[8];
+	struct RDArgs *rdargs;
+	long opts[ OPT_LAST ];
 	
-	if ( ( _DOSBase = ( struct DosLibrary* ) OpenLibrary( "dos.library", 0 ) ) == NULL )
+	if( ( _DOSBase = ( struct DosLibrary* ) OpenLibrary( "dos.library", 0 ) ) == NULL )
 	{
 		fprintf( stderr, "%s\n", "OpenLibrary( dos ) failed" );
 		exit( EXIT_FAILURE );
 	}
-  	
+	
+	fprintf( "Paula Revision: %ld\n", GetPaulaID(); );
+	
+  	memset( (char *) opts, 0, sizeof( opts ) );
+	
 	sndBank = ( struct SAGAChannel* ) 0xDFF400;
 	
-	sndData[0] = sndLoad( "SOUND_00.iff", &sndSize[0] );
-	sndData[1] = sndLoad( "SOUND_01.iff", &sndSize[1] );
-	sndData[2] = sndLoad( "SOUND_02.iff", &sndSize[2] );
-	sndData[3] = sndLoad( "SOUND_03.iff", &sndSize[3] );
-	sndData[4] = sndLoad( "SOUND_04.iff", &sndSize[4] );
-	sndData[5] = sndLoad( "SOUND_05.iff", &sndSize[5] );
-	sndData[6] = sndLoad( "SOUND_06.iff", &sndSize[6] );
-	sndData[7] = sndLoad( "SOUND_07.iff", &sndSize[7] );
-	
-	sndPlay( 0, sndData[0], sndSize[0], 22050, 64, 32, 0, 1 );
-	sndPlay( 1, sndData[1], sndSize[1], 22050, 64, 32, 0, 1 );
-	sndPlay( 2, sndData[2], sndSize[2], 22050, 64, 32, 0, 1 );
-	sndPlay( 3, sndData[3], sndSize[3], 22050, 64, 32, 0, 1 );
-	sndPlay( 4, sndData[4], sndSize[4], 22050, 64, 32, 0, 1 );
-	sndPlay( 5, sndData[5], sndSize[5], 22050, 64, 32, 0, 1 );
-	sndPlay( 6, sndData[6], sndSize[6], 22050, 64, 32, 0, 1 );
-	sndPlay( 7, sndData[7], sndSize[7], 22050, 64, 32, 0, 1 );
-	
-	// INSERT PROGRAM LOOP HERE
-	// INSERT PROGRAM LOOP HERE
-	// INSERT PROGRAM LOOP HERE
-	
-	sndFree( sndData[0] );
-	sndFree( sndData[1] );
-	sndFree( sndData[2] );
-	sndFree( sndData[3] );
-	sndFree( sndData[4] );
-	sndFree( sndData[5] );
-	sndFree( sndData[6] );
-	sndFree( sndData[7] );
+	if( rdargs = (struct RDArgs *) ReadArgs( TEMPLATE, opts, NULL ) )
+	{
+		BYTE*  fileName;
+		UBYTE* fileData;
+		LONG   fileSize;
+		
+		LONG   channel   = 0;
+		LONG   rate      = 22050;
+		LONG   volume1   = 64;
+		LONG   volume2   = 32;
+		LONG   is16bits  = FALSE;
+		BOOL   isOneshot = FALSE;
+		
+		if( opts[ OPT_FILE      ] ) fileName  =  ( UBYTE* ) opts[ OPT_FILE    ];
+		if( opts[ OPT_CHANNEL   ] ) channel   = *( LONG * ) opts[ OPT_CHANNEL ];
+		if( opts[ OPT_RATE      ] ) rate      = *( LONG * ) opts[ OPT_RATE    ];
+		if( opts[ OPT_VOLUME1   ] ) volume1   = *( LONG * ) opts[ OPT_VOLUME1 ];
+		if( opts[ OPT_VOLUME2   ] ) volume2   = *( LONG * ) opts[ OPT_VOLUME2 ];
+		if( opts[ OPT_IS16BITS  ] ) is16bits  = TRUE;
+		if( opts[ OPT_ISONESHOT ] ) isOneShot = TRUE;
+		
+		fileData = sndLoad( fileName, &fileSize );
+		
+		if( fileData != NULL )
+		{
+			sndPlay( channel, fileData, fileSize, rate, volume1, volume2, is16bits, isOneShot );
+			
+			printf( "Ctrl+C to stop.\n" );
+			
+			do
+			{
+				Delay(10);
+				
+			} while ( ! CheckSignal( SIGBREAKF_CTRL_C ) );
+			
+			sndStop( channel );
+			sndFree( fileData );
+		}
+		else
+		{
+			fprintf( stderr, "%s\n", "sndLoad() failed, sample not loaded" );
+		}
+		
+		FreeArgs( rdargs );
+	}
+	else
+	{
+		PrintFault( IoErr(), APPNAME );
+	}
 	
 	CloseLibrary( ( struct Library* ) _DOSBase );
 	
 	exit( EXIT_SUCCESS );
 }
-
-
