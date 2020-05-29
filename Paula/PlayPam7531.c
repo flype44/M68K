@@ -225,8 +225,8 @@ int main( int argc, char *argv[] )
 		
 		LONG   channel   = 0;
 		LONG   rate      = 22050;
-		LONG   volume1   = 64;
-		LONG   volume2   = 32;
+		LONG   volume1   = 128;
+		LONG   volume2   = 64;
 		LONG   is16bits  = FALSE;
 		BOOL   isOneshot = FALSE;
 		
