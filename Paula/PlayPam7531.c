@@ -5,6 +5,7 @@
  ** Short:   Play sound on a given channel.
  ** Purpose: Test PAMELA logic implementation.
  ** Authors: (C) APOLLO-Team 2020.
+ ** Build:   m68k-amigaos-gcc -noixemul -Os -m68040
  *********************************************************************/
 
 #include <stdio.h>
@@ -228,7 +229,7 @@ int main( int argc, char *argv[] )
 		LONG   volume1   = 128;
 		LONG   volume2   = 64;
 		LONG   is16bits  = FALSE;
-		BOOL   isOneshot = FALSE;
+		BOOL   isOneShot = FALSE;
 		
 		if( opts[ OPT_FILE      ] ) fileName  =  ( UBYTE* ) opts[ OPT_FILE    ];
 		if( opts[ OPT_CHANNEL   ] ) channel   = *( LONG * ) opts[ OPT_CHANNEL ];
