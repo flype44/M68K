@@ -17,7 +17,8 @@ Channel 07 | DFF47_
 
 # Features per channel
 
-Register | RW | Feature
+Register | RW  | Feature
+---------| --- | -------
 DFF4_0 | (W) | PTR HIGH
 DFF4_2 | (W) | PTR LOW
 DFF4_4 | (W) | LEN HIGH
@@ -29,7 +30,8 @@ DFF4_E | (W) | RESERVED
 
 # Control registers
 
-Name | Register | RW | Description
+Name | Register  | RW  | Description
+---- | --------- | --- | -----------
 POTINP1  | DFF016 | (R) | Read Paula chip ID (0=Paula, 1=Pamela)
 DMACONR1 | DFF002 | (R) | Control AUD DMA  (Bit0 to Bit3 ) AUD0..3
 DMACONR2 | DFF202 | (R) | Control AUD DMA  (Bit0 to Bit11) AUD4..7
