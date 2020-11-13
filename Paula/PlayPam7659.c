@@ -49,19 +49,19 @@
 #define POTINP1   0xDFF016    // (R) Read Paula chip ID (0=Paula, 1=Pamela)
 
 #define DMACONR1  0xDFF002    // (R) Control AUD DMA  (Bit0 to Bit3 ) AUD0..3
-#define DMACONR2  0xDFF202    // (R) Control AUD DMA  (Bit0 to Bit11) AUD4..15
+#define DMACONR2  0xDFF202    // (R) Control AUD DMA  (Bit0 to Bit11) AUD4..7
 #define DMACON1   0xDFF096    // (W) Control AUD DMA  (Bit0 to Bit3 ) AUD0..3
-#define DMACON2   0xDFF296    // (W) Control AUD DMA  (Bit0 to Bit11) AUD4..15
+#define DMACON2   0xDFF296    // (W) Control AUD DMA  (Bit0 to Bit11) AUD4..7
 
 #define INTENAR1  0xDFF01C    // (R) Request INT BITS (Bit7 to Bit10) AUD0..3
-#define INTENAR2  0xDFF21C    // (R) Request INT BITS (Bit0 to Bit11) AUD4..15
+#define INTENAR2  0xDFF21C    // (R) Request INT BITS (Bit0 to Bit11) AUD4..7
 #define INTENA1   0xDFF09A    // (W) Request INT BITS (Bit7 to Bit10) AUD0..3
-#define INTENA2   0xDFF29A    // (W) Request INT BITS (Bit0 to Bit11) AUD4..15
+#define INTENA2   0xDFF29A    // (W) Request INT BITS (Bit0 to Bit11) AUD4..7
 
 #define INTREQR1  0xDFF01E    // (R) Request INT BITS (Bit7 to Bit10) AUD0..3
-#define INTREQR2  0xDFF21E    // (R) Request INT BITS (Bit0 to Bit11) AUD4..15
+#define INTREQR2  0xDFF21E    // (R) Request INT BITS (Bit0 to Bit11) AUD4..7
 #define INTREQ1   0xDFF09C    // (W) Request INT BITS (Bit7 to Bit10) AUD0..3
-#define INTREQ2   0xDFF29C    // (W) Request INT BITS (Bit0 to Bit11) AUD4..15
+#define INTREQ2   0xDFF29C    // (W) Request INT BITS (Bit0 to Bit11) AUD4..7
 
 struct SAGAChannel
 {
@@ -90,7 +90,7 @@ struct SAGAChannel
 #define OPT_ISONESHOT 6
 #define OPT_LAST      7
 
-const BYTE VERSTRING[] = "$VER: PlayPam 0.5 (29-5-2020)\n";
+const BYTE VERSTRING[] = "$VER: PlayPam 0.6 (01-08-2020)\n";
 
 struct SAGAChannel* sndBank;
 
