@@ -1,7 +1,7 @@
 /*********************************************************************
- ** Project: PlayPam7531.c
- ** Version: 7531
- ** Date:    2020-may
+ ** Project: PlayPam7659.c
+ ** Version: 7659
+ ** Date:    2020-august
  ** Short:   Play sound on a given channel.
  ** Purpose: Test PAMELA logic implementation.
  ** Authors: (C) APOLLO-Team 2020.
@@ -31,14 +31,6 @@
 	Channel 05 = DFF45_
 	Channel 06 = DFF46_
 	Channel 07 = DFF47_
-	Channel 08 = DFF48_
-	Channel 09 = DFF49_
-	Channel 10 = DFF4A_
-	Channel 11 = DFF4B_
-	Channel 12 = DFF4C_
-	Channel 13 = DFF4D_
-	Channel 14 = DFF4E_
-	Channel 15 = DFF4F_
 	
 	DFF4_0 = (W) PTR HIGH
 	DFF4_2 = (W) PTR LOW
@@ -79,7 +71,7 @@ struct SAGAChannel
   UWORD  ac_mod;   // Mode
   UWORD  ac_per;   // Period
   UWORD  ac_pad;   // Reserved
-} aud[16];
+} aud[8];
 
 /*********************************************************************
  ** PRIVATE DEFINITIONS
@@ -114,13 +106,13 @@ UWORD GetPaulaID()
 UBYTE* sndLoad( BYTE* fileName, LONG* fileSize )
 {
 	UBYTE* buffer;
-	BPTR   file = NULL;
-	BPTR   lock = NULL;
+	BPTR   file = 0;
+	BPTR   lock = 0;
 	struct FileInfoBlock* fib = NULL;
 	
 	if ( lock = Lock( fileName, ACCESS_READ ) )
 	{
-		if ( fib = ( struct FileInfoBlock* ) AllocMem( sizeof ( struct FileInfoBlock ), NULL ) )
+		if ( fib = ( struct FileInfoBlock* ) AllocMem( sizeof ( struct FileInfoBlock ), 0 ) )
 		{
 			if ( Examine( lock, fib ) )
 			{
@@ -145,9 +137,9 @@ UBYTE* sndLoad( BYTE* fileName, LONG* fileSize )
 	return buffer;
 }
 
-void sndPlay( int channel, int *ptr, int size, int rate, int vol1, int vol2, int is16bits, int isOneShot )
+void sndPlay( int channel, UBYTE *ptr, int size, int rate, int vol1, int vol2, int is16bits, int isOneShot )
 {
-	if ( channel < 16 )
+	if ( channel < 8 )
 	{
 		if ( vol1 > 128 ) vol1 = 128;
 		if ( vol2 > 128 ) vol2 = 128;
@@ -182,9 +174,9 @@ void sndStop( int channel )
 		// Disable DMA for AUD0..3
 		CLR16( DMACON1, 1 << ( channel - 0 ) );
 	}
-	else if ( channel < 16 )
+	else if ( channel < 8 )
 	{
-		// Disable DMA for AUD4..15
+		// Disable DMA for AUD4..7
 		CLR16( DMACON2, 1 << ( channel - 4 ) );
 	}
 }
@@ -212,7 +204,7 @@ int main( int argc, char *argv[] )
 		exit( EXIT_FAILURE );
 	}
 	
-	fprintf( "Paula Revision: %ld\n", GetPaulaID(); );
+	fprintf( stdout, "Paula Revision: %ld\n", GetPaulaID() );
 	
   	memset( (char *) opts, 0, sizeof( opts ) );
 	
