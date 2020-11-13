@@ -1,0 +1,162 @@
+
+		; Super Sprite -> Bank 0
+		
+		dc.w    $0106,$0100
+		dc.w    $0180,$0000
+		dc.w    $0182,$0f00		; RED
+		dc.w    $0184,$0e00
+		dc.w    $0186,$0d00
+		dc.w    $0188,$0c00
+		dc.w    $018a,$0b00
+		dc.w    $018c,$0a00
+		dc.w    $018e,$0900
+		dc.w    $0190,$0800
+		dc.w    $0192,$0700
+		dc.w    $0194,$0600
+		dc.w    $0196,$0500
+		dc.w    $0198,$0400
+		dc.w    $019a,$0300
+		dc.w    $019c,$0200
+		dc.w    $019e,$0100
+		
+		; Super Sprite -> Bank 1
+		
+		dc.w    $0106,$0100
+		dc.w    $01a0,$0000
+		dc.w    $01a2,$0f80		; ORANGE
+		dc.w    $01a4,$0e80
+		dc.w    $01a6,$0d70
+		dc.w    $01a8,$0c70
+		dc.w    $01aa,$0b60
+		dc.w    $01ac,$0a60
+		dc.w    $01ae,$0950
+		dc.w    $01b0,$0850
+		dc.w    $01b2,$0740
+		dc.w    $01b4,$0640
+		dc.w    $01b6,$0530
+		dc.w    $01b8,$0430
+		dc.w    $01ba,$0320
+		dc.w    $01bc,$0220
+		dc.w    $01be,$0110
+		
+		; Super Sprite -> Bank 2
+		
+		dc.w    $0106,$2100
+		dc.w    $0180,$0000
+		dc.w    $0182,$0ff0		; YELLOW
+		dc.w    $0184,$0ee0
+		dc.w    $0186,$0dd0
+		dc.w    $0188,$0cc0
+		dc.w    $018a,$0bb0
+		dc.w    $018c,$0aa0
+		dc.w    $018e,$0990
+		dc.w    $0190,$0880
+		dc.w    $0192,$0770
+		dc.w    $0194,$0660
+		dc.w    $0196,$0550
+		dc.w    $0198,$0440
+		dc.w    $019a,$0330
+		dc.w    $019c,$0220
+		dc.w    $019e,$0110
+		
+		; Super Sprite -> Bank 3
+		
+		dc.w    $0106,$2100
+		dc.w    $01a0,$0000
+		dc.w    $01a2,$00f0		; GREEN
+		dc.w    $01a4,$00e0
+		dc.w    $01a6,$00d0
+		dc.w    $01a8,$00c0
+		dc.w    $01aa,$00b0
+		dc.w    $01ac,$00a0
+		dc.w    $01ae,$0090
+		dc.w    $01b0,$0080
+		dc.w    $01b2,$0070
+		dc.w    $01b4,$0060
+		dc.w    $01b6,$0050
+		dc.w    $01b8,$0040
+		dc.w    $01ba,$0030
+		dc.w    $01bc,$0020
+		dc.w    $01be,$0010
+		
+		; Super Sprite -> Bank 4
+		
+		dc.w    $0106,$4100
+		dc.w    $0180,$0000
+		dc.w    $0182,$00ff		; CYAN
+		dc.w    $0184,$00ee
+		dc.w    $0186,$00dd
+		dc.w    $0188,$00cc
+		dc.w    $018a,$00bb
+		dc.w    $018c,$00aa
+		dc.w    $018e,$0099
+		dc.w    $0190,$0088
+		dc.w    $0192,$0077
+		dc.w    $0194,$0066
+		dc.w    $0196,$0055
+		dc.w    $0198,$0044
+		dc.w    $019a,$0033
+		dc.w    $019c,$0022
+		dc.w    $019e,$0011
+		
+		; Super Sprite -> Bank 5
+				
+		dc.w    $0106,$4100
+		dc.w    $01a0,$0000
+		dc.w    $01a2,$000f		; BLUE
+		dc.w    $01a4,$000e
+		dc.w    $01a6,$000d
+		dc.w    $01a8,$000c
+		dc.w    $01aa,$000b
+		dc.w    $01ac,$000a
+		dc.w    $01ae,$0009
+		dc.w    $01b0,$0008
+		dc.w    $01b2,$0007
+		dc.w    $01b4,$0006
+		dc.w    $01b6,$0005
+		dc.w    $01b8,$0004
+		dc.w    $01ba,$0003
+		dc.w    $01bc,$0002
+		dc.w    $01be,$0001
+		
+		; Super Sprite -> Bank 6
+		
+		dc.w    $0106,$6100
+		dc.w    $0180,$0000
+		dc.w    $0182,$080f		; PURPLE
+		dc.w    $0184,$080e
+		dc.w    $0186,$070d
+		dc.w    $0188,$070c
+		dc.w    $018a,$060b
+		dc.w    $018c,$060a
+		dc.w    $018e,$0509
+		dc.w    $0190,$0508
+		dc.w    $0192,$0407
+		dc.w    $0194,$0406
+		dc.w    $0196,$0305
+		dc.w    $0198,$0304
+		dc.w    $019a,$0203
+		dc.w    $019c,$0202
+		dc.w    $019e,$0101
+		
+		; Super Sprite -> Bank 7
+				
+		dc.w    $0106,$6100
+		dc.w    $01a0,$0000
+		dc.w    $01a2,$0f0f		; PINK
+		dc.w    $01a4,$0e0e
+		dc.w    $01a6,$0d0d
+		dc.w    $01a8,$0c0c
+		dc.w    $01aa,$0b0b
+		dc.w    $01ac,$0a0a
+		dc.w    $01ae,$0909
+		dc.w    $01b0,$0808
+		dc.w    $01b2,$0707
+		dc.w    $01b4,$0606
+		dc.w    $01b6,$0505
+		dc.w    $01b8,$0404
+		dc.w    $01ba,$0303
+		dc.w    $01bc,$0202
+		dc.w    $01be,$0101
+
+
